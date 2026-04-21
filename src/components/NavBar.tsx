@@ -10,11 +10,12 @@ const TABS: { id: TabType; label: string }[] = [
 ]
 
 export function NavBar() {
-  const tab        = useListStore((s) => s.tab)
-  const setTab     = useListStore((s) => s.setTab)
-  const permission = useListStore((s) => s.permission)
-  const loading    = useListStore((s) => s.loading)
-  const loadingMsg = useListStore((s) => s.loadingMessage)
+  const tab         = useListStore((s) => s.tab)
+  const setTab      = useListStore((s) => s.setTab)
+  const permission  = useListStore((s) => s.permission)
+  const loading     = useListStore((s) => s.loading)
+  const loadingMsg  = useListStore((s) => s.loadingMessage)
+  const goToLanding = useListStore((s) => s.goToLanding)
   const [showShare, setShowShare] = useState(false)
 
   return (
@@ -22,15 +23,18 @@ export function NavBar() {
       <header className="sticky top-0 z-40 bg-white border-b border-border card-shadow">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
 
-          {/* Brand */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
+          {/* Brand — clicável, volta para a LandingPage */}
+          <button
+            onClick={goToLanding}
+            className="flex items-center gap-2.5 flex-shrink-0 hover:opacity-80 transition-opacity"
+          >
             <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-btn">
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
                 <path d="M4 14L9 4L14 14M6 11H12" stroke="white" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </div>
             <span className="font-display text-base font-bold gradient-text">WeMove</span>
-          </div>
+          </button>
 
           {/* Tabs — só no desktop */}
           <nav className="hidden md:flex gap-0.5 bg-bg-2 border border-border rounded-xl p-1">

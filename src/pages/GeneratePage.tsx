@@ -25,7 +25,11 @@ const labelCls = 'block text-sm font-bold text-ink mb-2'
 
 type Step = 'form' | 'loading' | 'done'
 
-export function GeneratePage() {
+interface GeneratePageProps {
+  onBack?: () => void
+}
+
+export function GeneratePage({ onBack }: GeneratePageProps = {}) {
   const setTokenAndInit = useListStore((s) => s.setTokenAndInit)
 
   const [step,       setStep]      = useState<Step>('form')
@@ -113,17 +117,24 @@ export function GeneratePage() {
   // Form
   return (
     <div className="max-w-xl mx-auto">
+      {/* Botão voltar */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-sm text-ink-2 hover:text-ink transition-colors mb-6"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          Voltar
+        </button>
+      )}
+
       {/* Hero */}
       <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center shadow-btn mx-auto mb-4">
-          <svg width="28" height="28" viewBox="0 0 18 18" fill="none">
-            <path d="M4 14L9 4L14 14M6 11H12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </div>
-        <h1 className="font-display text-3xl font-bold gradient-text mb-2">WeMove</h1>
+        <h1 className="font-display text-2xl font-bold text-ink mb-1">Iniciar nova mudança</h1>
         <p className="text-ink-2 text-sm leading-relaxed">
-          Conte um pouco sobre seu novo imóvel e a nossa IA vai gerar<br/>
-          uma lista de compras personalizada para você.
+          Conte sobre seu imóvel e a IA cria uma lista personalizada para você.
         </p>
       </div>
 

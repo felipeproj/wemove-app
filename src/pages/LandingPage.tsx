@@ -1,0 +1,255 @@
+/**
+ * LandingPage — exibida quando não há ?lista=TOKEN na URL.
+ *
+ * Views:
+ *  'home'     → apresentação do produto + dois CTAs
+ *  'access'   → campo para colar o código da lista existente
+ *  'generate' → formulário de nova mudança via IA
+ */
+
+import { useState } from 'react'
+import { useListStore } from '../store/useListStore'
+import { GeneratePage } from './GeneratePage'
+
+type View = 'home' | 'access' | 'generate'
+
+// ── Ícones inline ────────────────────────────────────────────────────────────
+
+function IconBox() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
+      <path d="M16 3H8L6 7h12l-2-4z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function IconSparkle() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" stroke="white" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+function IconLink() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+// ── Logo WeMove ───────────────────────────────────────────────────────────────
+
+function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const iconSizes = { sm: 'w-10 h-10', md: 'w-14 h-14', lg: 'w-20 h-20' }
+  const textSizes = { sm: 'text-xl', md: 'text-3xl', lg: 'text-4xl md:text-5xl' }
+  const iconInner = { sm: 20, md: 26, lg: 34 }
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className={`${iconSizes[size]} rounded-2xl gradient-bg flex items-center justify-center shadow-btn`}>
+        <svg width={iconInner[size]} height={iconInner[size]} viewBox="0 0 18 18" fill="none">
+          <path d="M4 14L9 4L14 14M6 11H12" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <p className={`font-display font-bold gradient-text ${textSizes[size]}`}>WeMove</p>
+    </div>
+  )
+}
+
+// ── View: Home ────────────────────────────────────────────────────────────────
+
+function HomeView({ onSelect }: { onSelect: (v: View) => void }) {
+  return (
+    <div className="flex flex-col items-center">
+      {/* Hero */}
+      <div className="text-center mb-10 md:mb-14">
+        <Logo size="lg" />
+        <p className="mt-5 text-2xl md:text-3xl font-display font-bold text-ink leading-tight">
+          Planeje sua mudança<br className="hidden sm:block" /> sem estresse
+        </p>
+        <p className="mt-3 text-sm md:text-base text-ink-2 max-w-md mx-auto leading-relaxed">
+          Crie uma lista de compras personalizada com IA, acompanhe o progresso e compartilhe com quem vai morar com você.
+        </p>
+      </div>
+
+      {/* Cards de ação */}
+      <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        {/* Card: Nova mudança */}
+        <button
+          onClick={() => onSelect('generate')}
+          className="group relative flex flex-col items-start gap-4 p-6 rounded-2xl border-2 border-transparent gradient-bg shadow-btn hover:opacity-95 hover:scale-[1.02] transition-all text-left"
+        >
+          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+            <IconSparkle />
+          </div>
+          <div>
+            <p className="text-white font-display font-bold text-lg">Iniciar nova mudança</p>
+            <p className="text-white/80 text-sm mt-1 leading-relaxed">
+              Conte sobre seu imóvel e a IA cria uma lista personalizada em segundos.
+            </p>
+          </div>
+          <span className="mt-auto inline-flex items-center gap-1.5 text-white font-semibold text-sm">
+            Começar agora
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
+          </span>
+        </button>
+
+        {/* Card: Acessar lista */}
+        <button
+          onClick={() => onSelect('access')}
+          className="group flex flex-col items-start gap-4 p-6 rounded-2xl border-2 border-border bg-white shadow-card hover:border-wm-blue hover:shadow-btn transition-all text-left"
+        >
+          <div className="w-12 h-12 rounded-xl bg-wm-blue/10 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="5" width="18" height="16" rx="2" stroke="#3B82F6" strokeWidth="1.8"/>
+              <path d="M7 10h10M7 14h6" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M8 2v4M16 2v4" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-ink font-display font-bold text-lg">Já tenho uma lista</p>
+            <p className="text-ink-2 text-sm mt-1 leading-relaxed">
+              Acesse uma lista existente com o código compartilhado com você.
+            </p>
+          </div>
+          <span className="mt-auto inline-flex items-center gap-1.5 text-wm-blue font-semibold text-sm group-hover:gap-2.5 transition-all">
+            Inserir código
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"/></svg>
+          </span>
+        </button>
+      </div>
+
+      {/* Features */}
+      <div className="w-full max-w-2xl mt-12 grid grid-cols-3 gap-4 text-center">
+        {[
+          { emoji: '🤖', label: 'Lista gerada por IA' },
+          { emoji: '📱', label: 'Funciona offline (PWA)' },
+          { emoji: '🔗', label: 'Compartilhe com facilidade' },
+        ].map((f) => (
+          <div key={f.label} className="flex flex-col items-center gap-2">
+            <span className="text-2xl">{f.emoji}</span>
+            <p className="text-xs text-ink-2 font-medium leading-snug">{f.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── View: Acessar lista ───────────────────────────────────────────────────────
+
+function AccessView({ onBack }: { onBack: () => void }) {
+  const setTokenAndInit = useListStore((s) => s.setTokenAndInit)
+  const loading         = useListStore((s) => s.loading)
+
+  const [token,  setToken]  = useState('')
+  const [error,  setError]  = useState<string | null>(null)
+
+  async function handleAccess() {
+    const t = token.trim()
+    if (!t) { setError('Cole ou digite o código da lista.'); return }
+    setError(null)
+    try {
+      await setTokenAndInit(t)
+    } catch {
+      setError('Código inválido ou lista não encontrada.')
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      {/* Back */}
+      <button
+        onClick={onBack}
+        className="self-start flex items-center gap-2 text-sm text-ink-2 hover:text-ink transition-colors mb-8"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        Voltar
+      </button>
+
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-wm-blue/10 flex items-center justify-center mx-auto mb-4">
+            <IconLink />
+          </div>
+          <h2 className="font-display text-2xl font-bold text-ink">Acessar lista</h2>
+          <p className="text-sm text-ink-2 mt-2">
+            Cole o código que foi compartilhado com você.<br/>
+            Ele fica na URL depois de <span className="font-mono text-ink bg-bg px-1 rounded">?lista=</span>
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-border p-6 shadow-card space-y-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-ink-3 mb-2">
+              Código da lista
+            </label>
+            <input
+              type="text"
+              placeholder="Cole o código aqui..."
+              value={token}
+              onChange={(e) => { setToken(e.target.value); setError(null) }}
+              onKeyDown={(e) => e.key === 'Enter' && handleAccess()}
+              autoFocus
+              className="w-full px-4 py-3 border border-border rounded-xl text-sm text-ink bg-bg placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all font-mono"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+              ⚠️ {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleAccess}
+            disabled={loading || !token.trim()}
+            className="w-full py-3.5 rounded-xl font-semibold text-sm gradient-bg text-white shadow-btn hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {loading ? 'Acessando...' : 'Acessar lista →'}
+          </button>
+
+          <button
+            onClick={onBack}
+            className="w-full py-3 rounded-xl text-sm font-semibold border border-border text-ink-2 hover:bg-bg transition-all"
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── LandingPage principal ─────────────────────────────────────────────────────
+
+export function LandingPage() {
+  const [view, setView] = useState<View>('home')
+
+  return (
+    <div className="min-h-screen bg-bg">
+      {/* Gradiente decorativo no topo */}
+      <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-blue-50/60 to-transparent pointer-events-none" />
+
+      <div className="relative z-10 w-full max-w-3xl mx-auto px-4 pt-12 pb-16 md:pt-20">
+
+        {/* Logo no topo quando não está na home */}
+        {view !== 'home' && (
+          <div className="flex justify-center mb-10">
+            <Logo size="sm" />
+          </div>
+        )}
+
+        {view === 'home'     && <HomeView onSelect={setView} />}
+        {view === 'access'   && <AccessView onBack={() => setView('home')} />}
+        {view === 'generate' && <GeneratePage onBack={() => setView('home')} />}
+      </div>
+    </div>
+  )
+}

@@ -48,6 +48,7 @@ interface ListStore {
   // actions — UI
   setFilter: (filter: FilterType) => void
   setTab: (tab: TabType) => void
+  goToLanding: () => void
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -178,4 +179,22 @@ export const useListStore = create<ListStore>((set, get) => ({
 
   setFilter: (filter) => set({ filter }),
   setTab: (tab) => set({ tab }),
+
+  goToLanding: () => {
+    // Remove token da URL e reseta o estado para exibir a LandingPage
+    const url = new URL(window.location.href)
+    url.searchParams.delete('lista')
+    window.history.replaceState({}, '', url.toString())
+    set({
+      needsSetup: true,
+      token: null,
+      items: [],
+      listTitle: '',
+      error: null,
+      loading: false,
+      loadingMessage: '',
+      filter: 'todos',
+      tab: 'lista',
+    })
+  },
 }))

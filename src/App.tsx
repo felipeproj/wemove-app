@@ -5,7 +5,7 @@ import { BottomNav } from './components/BottomNav'
 import { ListaPage } from './pages/ListaPage'
 import { ResumoPage } from './pages/ResumoPage'
 import { DashPage } from './pages/DashPage'
-import { GeneratePage } from './pages/GeneratePage'
+import { LandingPage } from './pages/LandingPage'
 import { usePolling } from './hooks/usePolling'
 
 export default function App() {
@@ -19,14 +19,8 @@ export default function App() {
   useEffect(() => { initList() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   usePolling()
 
-  // ── Generate (sem token na URL) ───────────────────────────────────────────
-  if (needsSetup) {
-    return (
-      <div className="min-h-screen bg-bg">
-        <GeneratePage />
-      </div>
-    )
-  }
+  // ── Landing (sem token na URL) ────────────────────────────────────────────
+  if (needsSetup) return <LandingPage />
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
