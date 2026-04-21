@@ -3,7 +3,7 @@ import { useListStore } from '../store/useListStore'
 import type { Item, FilterType } from '../types'
 
 export function useFilteredItems(search: string): Item[] {
-  const items = useListStore((s) => s.items)
+  const items  = useListStore((s) => s.items)
   const filter = useListStore((s) => s.filter)
 
   return useMemo(() => {
@@ -28,4 +28,6 @@ function applyFilter(item: Item, filter: FilterType): boolean {
     case 'Alta':          return item.pri === 'Alta'
     case 'pendentes':     return !item.comprado
     case 'comprados':     return item.comprado
-    default:  
+    default:              return true
+  }
+}

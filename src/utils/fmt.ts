@@ -15,5 +15,5 @@ export const AMB_COLORS: Record<string, string> = {
   'Escritório':          '#8B5CF6',
   'Área de Serviço':     '#10B981',
   'Banheiro / Lavabo':   '#06B6D4',
-  'Geral / Tecnologia':  '#6B7280',
+  'Geral / Tecnologia':  '#6366F1',
 }

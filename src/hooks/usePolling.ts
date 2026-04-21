@@ -13,10 +13,10 @@ import { useListStore } from '../store/useListStore'
 const INTERVAL = 5000 // 5 segundos
 
 export function usePolling() {
-  const token      = useListStore((s) => s.token)
-  const loading    = useListStore((s) => s.loading)
+  const token        = useListStore((s) => s.token)
+  const loading      = useListStore((s) => s.loading)
   const refreshItems = useListStore((s) => s.refreshItems)
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     // Só começa a polear quando a lista estiver pronta
