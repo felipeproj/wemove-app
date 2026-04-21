@@ -38,12 +38,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Cache da shell do app — funciona offline
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            // API — network first, fallback para cache (30s stale)
-            urlPattern: ({ url }) => url.origin === 'https://api.wemoveapp.co',
+            urlPattern: /^https:\/\/api\.wemoveapp\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'wemove-api-cache',
@@ -52,8 +50,7 @@ export default defineConfig({
             },
           },
           {
-            // Google Fonts
-            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
