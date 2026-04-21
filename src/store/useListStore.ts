@@ -49,6 +49,8 @@ interface ListStore {
   setFilter: (filter: FilterType) => void
   setTab: (tab: TabType) => void
   goToLanding: () => void
+  modalOpen: boolean
+  setModalOpen: (open: boolean) => void
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -77,6 +79,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   loadingMessage: '',
   error: null,
   needsSetup: false,
+  modalOpen: false,
 
   // ── Inicialização ──────────────────────────────────────────────────────────
 
@@ -179,6 +182,7 @@ export const useListStore = create<ListStore>((set, get) => ({
 
   setFilter: (filter) => set({ filter }),
   setTab: (tab) => set({ tab }),
+  setModalOpen: (open) => set({ modalOpen: open }),
 
   goToLanding: () => {
     // Remove token da URL e reseta o estado para exibir a LandingPage

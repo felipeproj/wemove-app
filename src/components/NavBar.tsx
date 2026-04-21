@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useListStore } from '../store/useListStore'
 import { ShareModal } from './modals/ShareModal'
+import { WeMoveIcon } from './WeMoveIcon'
 import type { TabType } from '../types'
 
 const TABS: { id: TabType; label: string }[] = [
@@ -29,9 +30,7 @@ export function NavBar() {
             className="flex items-center gap-2.5 flex-shrink-0 hover:opacity-80 transition-opacity"
           >
             <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-btn">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                <path d="M4 14L9 4L14 14M6 11H12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+              <WeMoveIcon size={16} />
             </div>
             <span className="font-display text-base font-bold gradient-text">WeMove</span>
           </button>

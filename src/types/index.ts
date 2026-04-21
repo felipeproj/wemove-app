@@ -84,6 +84,7 @@ export interface GenerateListPayload {
   padrao: Padrao
   orcamento?: number
   ja_possui?: string
+  detalhes_imovel?: string  // descrição detalhada dos cômodos para o prompt da IA
 }
 
 export interface GenerateListResult {

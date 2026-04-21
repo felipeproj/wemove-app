@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Item } from '../../types'
 import { fmt } from '../../utils/fmt'
 import { useListStore } from '../../store/useListStore'
@@ -11,10 +11,16 @@ interface Props {
 }
 
 export function CompraModal({ item, onClose, onSuccess, onError }: Props) {
-  const markBought = useListStore((s) => s.markBought)
+  const markBought   = useListStore((s) => s.markBought)
+  const setModalOpen = useListStore((s) => s.setModalOpen)
   const [valor,  setValor]  = useState('')
   const [loja,   setLoja]   = useState('')
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setModalOpen(true)
+    return () => setModalOpen(false)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleConfirm() {
     const v = parseFloat(valor)

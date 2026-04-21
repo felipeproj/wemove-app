@@ -38,10 +38,15 @@ export function ItemFormModal({ item, onClose, onSuccess, onError }: Props) {
   const [inappropriateMsg, setInappropriateMsg] = useState('')
   const [aiSuggested,    setAiSuggested]    = useState(false)  // mostra badge "preenchido pela IA"
 
-  const nomeRef    = useRef<HTMLInputElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const setModalOpen = useListStore((s) => s.setModalOpen)
+  const nomeRef      = useRef<HTMLInputElement>(null)
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => { setTimeout(() => nomeRef.current?.focus(), 100) }, [])
+  useEffect(() => {
+    setModalOpen(true)
+    setTimeout(() => nomeRef.current?.focus(), 100)
+    return () => setModalOpen(false)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dispara sugestão automática quando nome tem ≥3 chars (com debounce de 1.5s)
   // Só aplica no modo criação — na edição o usuário já tem os dados

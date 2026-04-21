@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useListStore } from './store/useListStore'
+import { WeMoveIcon } from './components/WeMoveIcon'
 import { NavBar } from './components/NavBar'
 import { BottomNav } from './components/BottomNav'
 import { ListaPage } from './pages/ListaPage'
@@ -27,9 +28,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-bg px-6">
         <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center shadow-btn animate-pulse-slow">
-          <svg width="30" height="30" viewBox="0 0 18 18" fill="none">
-            <path d="M4 14L9 4L14 14M6 11H12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          <WeMoveIcon size={30} />
         </div>
         <p className="font-display text-2xl font-bold gradient-text">WeMove</p>
         <p className="text-sm text-ink-3">{loadingMsg || 'Carregando...'}</p>

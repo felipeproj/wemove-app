@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+import { useListStore } from '../../store/useListStore'
+
 interface Props {
   message: string
   onConfirm: () => void
@@ -6,6 +9,12 @@ interface Props {
 }
 
 export function ConfirmModal({ message, onConfirm, onCancel, loading }: Props) {
+  const setModalOpen = useListStore((s) => s.setModalOpen)
+  useEffect(() => {
+    setModalOpen(true)
+    return () => setModalOpen(false)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-ink/30 backdrop-blur-sm">
       <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-modal animate-fade-in">

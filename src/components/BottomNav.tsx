@@ -26,8 +26,11 @@ const TABS: { id: TabType; label: string; icon: string }[] = [
 ]
 
 export function BottomNav() {
-  const tab    = useListStore((s) => s.tab)
-  const setTab = useListStore((s) => s.setTab)
+  const tab       = useListStore((s) => s.tab)
+  const setTab    = useListStore((s) => s.setTab)
+  const modalOpen = useListStore((s) => s.modalOpen)
+
+  if (modalOpen) return null
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border card-shadow">

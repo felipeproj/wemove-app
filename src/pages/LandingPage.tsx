@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { useListStore } from '../store/useListStore'
 import { GeneratePage } from './GeneratePage'
+import { WeMoveIcon } from '../components/WeMoveIcon'
 
 type View = 'home' | 'access' | 'generate'
 
@@ -41,9 +42,7 @@ function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className={`${iconSizes[size]} rounded-2xl gradient-bg flex items-center justify-center shadow-btn`}>
-        <svg width={iconInner[size]} height={iconInner[size]} viewBox="0 0 18 18" fill="none">
-          <path d="M4 14L9 4L14 14M6 11H12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        </svg>
+        <WeMoveIcon size={iconInner[size]} />
       </div>
       <p className={`font-display font-bold gradient-text ${textSizes[size]}`}>WeMove</p>
     </div>
