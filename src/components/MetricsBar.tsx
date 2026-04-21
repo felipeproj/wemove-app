@@ -4,54 +4,43 @@ import { fmt } from '../utils/fmt'
 export function MetricsBar() {
   const items = useListStore((s) => s.items)
 
-  const total   = items.length
-  const bought  = items.filter((i) => i.comprado).length
-  const pct     = total ? Math.round((bought / total) * 100) : 0
-  const tMin    = items.reduce((s, i) => s + (i.preco_min ?? 0) * i.qtd, 0)
-  const tMax    = items.reduce((s, i) => s + (i.preco_max ?? 0) * i.qtd, 0)
-  const spent   = items.filter((i) => i.comprado).reduce((s, i) => s + (i.gasto ?? 0), 0)
-  const essentials = items.filter((i) => i.cat === 'Essencial').length
+  const total  = items.length
+  const bought = items.filter((i) => i.comprado).length
+  const pct    = total ? Math.round((bought / total) * 100) : 0
+  const tMin   = items.reduce((s, i) => s + (i.preco_min ?? 0) * i.qtd, 0)
+  const tMax   = items.reduce((s, i) => s + (i.preco_max ?? 0) * i.qtd, 0)
+  const spent  = items.filter((i) => i.comprado).reduce((s, i) => s + (i.gasto ?? 0), 0)
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-      <MetricCard label="Total de itens" value={String(total)} sub={`${essentials} essenciais`} />
-      <MetricCard
-        label="Progresso"
-        value={`${pct}%`}
-        color="green"
-        extra={
-          <div className="h-1.5 bg-border rounded-full overflow-hidden mt-1">
-            <div className="prog-fill h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-          </div>
-        }
-      />
-      <MetricCard label="Orçamento estimado" value={fmt(tMin)} sub={`até ${fmt(tMax)}`} color="amber" />
-      <MetricCard label="Já gasto" value={fmt(spent)} sub={`${fmt(Math.max(0, tMin - spent))} restante`} color="blue" />
-    </div>
-  )
-}
+    <div className="grid grid-cols-2 gap-3 mb-5">
+      {/* Progresso */}
+      <div className="col-span-2 bg-white rounded-2xl card-shadow p-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-semibold text-ink">Progresso da mudança</span>
+          <span className="font-display text-xl font-bold gradient-text">{pct}%</span>
+        </div>
+        <div className="h-3 bg-bg-2 rounded-full overflow-hidden">
+          <div className="prog-fill h-full rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex justify-between mt-1.5 text-xs text-ink-3">
+          <span>{bought} comprados</span>
+          <span>{total - bought} pendentes</span>
+        </div>
+      </div>
 
-interface MetricCardProps {
-  label: string
-  value: string
-  sub?: string
-  color?: 'green' | 'amber' | 'blue'
-  extra?: React.ReactNode
-}
+      {/* Orçamento mínimo */}
+      <div className="bg-white rounded-2xl card-shadow p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 mb-1">Orçamento</p>
+        <p className="font-display text-lg font-bold text-wm-blue">{fmt(tMin)}</p>
+        <p className="text-[11px] text-ink-3 mt-0.5">até {fmt(tMax)}</p>
+      </div>
 
-function MetricCard({ label, value, sub, color, extra }: MetricCardProps) {
-  const colorMap = {
-    green: 'border-wm-green/20 bg-wm-green/10 [&_.val]:text-wm-green',
-    amber: 'border-wm-amber/20 bg-wm-amber/10 [&_.val]:text-wm-amber',
-    blue:  'border-wm-blue/25 bg-wm-blue/10 [&_.val]:text-wm-blue2',
-  }
-
-  return (
-    <div className={`rounded-lg border border-border bg-card p-4 ${color ? colorMap[color] : ''}`}>
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-2">{label}</div>
-      <div className="val font-display text-2xl font-bold text-white leading-none">{value}</div>
-      {sub && <div className="text-[11px] text-white/40 mt-1">{sub}</div>}
-      {extra}
+      {/* Já gasto */}
+      <div className="bg-white rounded-2xl card-shadow p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 mb-1">Já gasto</p>
+        <p className="font-display text-lg font-bold text-wm-pink">{fmt(spent)}</p>
+        <p className="text-[11px] text-ink-3 mt-0.5">{fmt(Math.max(0, tMin - spent))} restante</p>
+      </div>
     </div>
   )
 }

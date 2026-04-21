@@ -12,8 +12,8 @@ interface Props {
 
 export function CompraModal({ item, onClose, onSuccess, onError }: Props) {
   const markBought = useListStore((s) => s.markBought)
-  const [valor, setValor] = useState('')
-  const [loja, setLoja]   = useState('')
+  const [valor,  setValor]  = useState('')
+  const [loja,   setLoja]   = useState('')
   const [saving, setSaving] = useState(false)
 
   async function handleConfirm() {
@@ -33,23 +33,24 @@ export function CompraModal({ item, onClose, onSuccess, onError }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-ink/30 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-card border border-border-2 rounded-[14px] p-7 w-full max-w-md">
-        <h2 className="font-display text-xl font-semibold mb-5">Registrar compra</h2>
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-modal animate-fade-in">
+        <h2 className="font-display text-xl font-bold text-ink mb-5">Registrar compra</h2>
 
         {/* Item info */}
-        <div className="bg-bg-3 border border-border rounded-lg p-3.5 mb-5">
-          <p className="text-[12px] text-white/40 mb-0.5">{item.amb}</p>
-          <strong className="text-[15px] font-semibold">{item.nome}</strong>
-          <p className="text-[12px] text-wm-blue2 mt-1.5">
-            Estimativa: {fmt((item.preco_min ?? 0) * item.qtd)} a {fmt((item.preco_max ?? 0) * item.qtd)} · {item.qtd}un
+        <div className="bg-bg-2 border border-border rounded-xl p-4 mb-5">
+          <p className="text-xs text-ink-3 mb-0.5">{item.amb}</p>
+          <p className="text-base font-semibold text-ink">{item.nome}</p>
+          <p className="text-xs text-wm-blue font-medium mt-1.5">
+            Estimativa: {fmt((item.preco_min ?? 0) * item.qtd)} a {fmt((item.preco_max ?? 0) * item.qtd)}
+            {item.qtd > 1 && ` · ${item.qtd} unidades`}
           </p>
         </div>
 
         <div className="mb-4">
-          <label className="block text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-ink-3 mb-2">
             Valor total pago (R$) *
           </label>
           <input
@@ -60,12 +61,12 @@ export function CompraModal({ item, onClose, onSuccess, onError }: Props) {
             placeholder="0,00"
             value={valor}
             onChange={(e) => setValor(e.target.value)}
-            className="w-full px-3 py-2.5 border border-border-2 rounded-lg text-sm bg-bg-3 text-white placeholder-white/30 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
+            className="w-full px-4 py-3 border border-border rounded-xl text-base text-ink bg-bg placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
           />
         </div>
 
         <div className="mb-6">
-          <label className="block text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-ink-3 mb-2">
             Onde comprou
           </label>
           <input
@@ -74,18 +75,18 @@ export function CompraModal({ item, onClose, onSuccess, onError }: Props) {
             value={loja}
             onChange={(e) => setLoja(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
-            className="w-full px-3 py-2.5 border border-border-2 rounded-lg text-sm bg-bg-3 text-white placeholder-white/30 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
+            className="w-full px-4 py-3 border border-border rounded-xl text-base text-ink bg-bg placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
           />
         </div>
 
-        <div className="flex gap-2 justify-end border-t border-border pt-5">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg text-[13px] font-medium border border-border-2 text-white/60 hover:bg-card-2 hover:text-white transition-all">
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-semibold border border-border text-ink-2 hover:bg-bg-2 transition-all">
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={saving}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium gradient-bg text-white hover:opacity-90 disabled:opacity-50 transition-all"
+            className="flex-1 py-3 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 disabled:opacity-50 transition-all"
           >
             {saving ? 'Salvando...' : 'Confirmar compra'}
           </button>
