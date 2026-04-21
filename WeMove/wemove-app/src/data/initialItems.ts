@@ -1,0 +1,53 @@
+/**
+ * Lista inicial de 44 itens para pré-popular uma nova lista.
+ * Usada apenas quando um token não existe na URL (primeira visita).
+ */
+
+import type { CreateItemPayload } from '../types'
+
+export const INITIAL_ITEMS: CreateItemPayload[] = [
+  { amb: 'Sala', nome: 'Sofá', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 1200, preco_max: 4000, obs: '2 ou 3 lugares. Para sala de ~18 m² prefira sofá de até 2,20 m de largura.' },
+  { amb: 'Sala', nome: 'Mesa de centro / mesinha lateral', cat: 'Não Essencial', pri: 'Média', qtd: 1, preco_min: 200, preco_max: 800, obs: 'Complementa o sofá; prefira modelos com tampo de vidro ou baixos.' },
+  { amb: 'Sala', nome: 'Rack / painel para TV', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 400, preco_max: 2000, obs: 'Painéis de 1,60–2,00 m são adequados para a sala.' },
+  { amb: 'Sala', nome: 'TV', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 1500, preco_max: 4500, obs: 'Para sala ~18 m², TV de 50"-55" é confortável.' },
+  { amb: 'Sala', nome: 'Luminária de pé / pendente', cat: 'Não Essencial', pri: 'Baixa', qtd: 1, preco_min: 150, preco_max: 600, obs: 'Iluminação de ambiente; complementar às luminárias embutidas.' },
+  { amb: 'Sala', nome: 'Tapete', cat: 'Não Essencial', pri: 'Baixa', qtd: 1, preco_min: 200, preco_max: 1200, obs: 'Define a área de estar. Prefira 1,60×2,30 m para sofá de 3 lugares.' },
+  { amb: 'Sala', nome: 'Aparador / buffet', cat: 'Não Essencial', pri: 'Baixa', qtd: 1, preco_min: 400, preco_max: 1800, obs: 'Armazenamento extra na sala.' },
+  { amb: 'Cozinha', nome: 'Geladeira', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 1800, preco_max: 3500, obs: 'Prefira modelos de 260–330 L, largura máx 60 cm. Evite side-by-side ou acima de 400 L.' },
+  { amb: 'Cozinha', nome: 'Fogão', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 600, preco_max: 2000, obs: 'Fogão 4 bocas (55 cm larg.) com forno integrado.' },
+  { amb: 'Cozinha', nome: 'Micro-ondas', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 350, preco_max: 1000, obs: '20–32 L suficiente para casal. Verifique nicho ou espaço no balcão.' },
+  { amb: 'Cozinha', nome: 'Depurador / Coifa', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 400, preco_max: 1800, obs: 'Depurador recirculante dispensa duto; coifa exige instalação de duto.' },
+  { amb: 'Cozinha', nome: 'Lava-louças', cat: 'Não Essencial', pri: 'Baixa', qtd: 1, preco_min: 1200, preco_max: 3000, obs: 'Modelos compactos 6 serviços cabem em bancadas menores.' },
+  { amb: 'Cozinha', nome: 'Mesa de jantar', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 600, preco_max: 2500, obs: '4 lugares aprox. 1,20×0,80 m. Extensível é ótima opção.' },
+  { amb: 'Cozinha', nome: 'Cadeiras', cat: 'Essencial', pri: 'Alta', qtd: 4, preco_min: 150, preco_max: 500, obs: '4 cadeiras para a mesa de jantar.' },
+  { amb: 'Cozinha', nome: 'Banquetas para bancada', cat: 'Não Essencial', pri: 'Baixa', qtd: 2, preco_min: 120, preco_max: 400, obs: '2 banquetas se houver bancada/ilha para sentar.' },
+  { amb: 'Cozinha', nome: 'Lixeira com pedal', cat: 'Essencial', pri: 'Média', qtd: 1, preco_min: 60, preco_max: 200, obs: '12–15 L para uso diário na cozinha.' },
+  { amb: 'Cozinha', nome: 'Copos', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 40, preco_max: 180, obs: 'Kit com 6–8 unidades. Considere copos para água, suco e vinho. Vidro temperado é mais durável.' },
+  { amb: 'Cozinha', nome: 'Pratos', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 60, preco_max: 300, obs: 'Jogo com 6–8 peças (raso, fundo e sobremesa). Cerâmica ou porcelana são os mais práticos.' },
+  { amb: 'Quarto Casal', nome: 'Cama box casal/queen', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 800, preco_max: 3500, obs: 'Queen (1,58×1,98 m) ideal para quartos de 10–12 m².' },
+  { amb: 'Quarto Casal', nome: 'Colchão', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 800, preco_max: 3000, obs: 'D33–D45, Queen 1,58×1,98 m. Invista em boa qualidade.' },
+  { amb: 'Quarto Casal', nome: 'Criado-mudo (x2)', cat: 'Não Essencial', pri: 'Média', qtd: 2, preco_min: 150, preco_max: 600, obs: 'Modelos estreitos 40–45 cm de profundidade.' },
+  { amb: 'Quarto Casal', nome: 'Cômoda / gaveteiro', cat: 'Não Essencial', pri: 'Baixa', qtd: 1, preco_min: 400, preco_max: 1500, obs: '5–6 gavetas (80–100 cm larg.) costuma bastar.' },
+  { amb: 'Quarto Casal', nome: 'Espelho de parede', cat: 'Essencial', pri: 'Média', qtd: 1, preco_min: 150, preco_max: 700, obs: 'Espelho de corpo inteiro 40×160 cm ou painel.' },
+  { amb: 'Quarto Casal', nome: 'Abajur / luminária de cabeceira (x2)', cat: 'Não Essencial', pri: 'Baixa', qtd: 2, preco_min: 80, preco_max: 300, obs: 'Iluminação direcional para cada lado da cama.' },
+  { amb: 'Escritório', nome: 'Mesa de escritório', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 500, preco_max: 2500, obs: 'Mesa em L (1,50×1,20 m) ou duas mesas de 1,20 m para 2 pessoas.' },
+  { amb: 'Escritório', nome: 'Cadeiras ergonômicas (x2)', cat: 'Essencial', pri: 'Alta', qtd: 2, preco_min: 400, preco_max: 2000, obs: 'Apoio lombar e ajuste de altura são essenciais.' },
+  { amb: 'Escritório', nome: 'Monitores curvos (x2)', cat: 'Essencial', pri: 'Alta', qtd: 2, preco_min: 800, preco_max: 2500, obs: '27"–32". Verifique HDMI/DisplayPort. Suporte articulado recomendado.' },
+  { amb: 'Escritório', nome: 'Estante / prateleiras', cat: 'Não Essencial', pri: 'Média', qtd: 1, preco_min: 200, preco_max: 800, obs: 'Para livros e organização. Modelos de parede economizam espaço.' },
+  { amb: 'Área de Serviço', nome: 'Máquina de lavar roupa', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 1200, preco_max: 3500, obs: '10–12 kg para casal. Largura padrão 60 cm.' },
+  { amb: 'Área de Serviço', nome: 'Tanque de lavar', cat: 'Essencial', pri: 'Média', qtd: 1, preco_min: 150, preco_max: 500, obs: 'Verifique se já existe instalação. ~50×40 cm.' },
+  { amb: 'Área de Serviço', nome: 'Ferro de passar + suporte', cat: 'Essencial', pri: 'Média', qtd: 1, preco_min: 100, preco_max: 400, obs: 'Ferro a vapor com suporte retrátil ou tábua.' },
+  { amb: 'Área de Serviço', nome: 'Armário de área de serviço', cat: 'Não Essencial', pri: 'Média', qtd: 1, preco_min: 100, preco_max: 400, obs: 'Para armazenar produtos de limpeza.' },
+  { amb: 'Banheiro / Lavabo', nome: 'Espelho / armário espelhado', cat: 'Essencial', pri: 'Alta', qtd: 2, preco_min: 100, preco_max: 500, obs: 'Para cada banheiro. Armário espelhado amplia percepção de espaço.' },
+  { amb: 'Banheiro / Lavabo', nome: 'Suporte para papel higiênico', cat: 'Essencial', pri: 'Alta', qtd: 2, preco_min: 30, preco_max: 100, obs: 'Simples de parede. Verifique se já vem instalado.' },
+  { amb: 'Banheiro / Lavabo', nome: 'Porta-toalhas', cat: 'Essencial', pri: 'Alta', qtd: 2, preco_min: 40, preco_max: 150, obs: 'Barra de parede para toalha de rosto e banho.' },
+  { amb: 'Banheiro / Lavabo', nome: 'Lixeira pequena', cat: 'Essencial', pri: 'Média', qtd: 2, preco_min: 20, preco_max: 80, obs: '5–7 L para cada banheiro.' },
+  { amb: 'Geral / Tecnologia', nome: 'Roteador Wi-Fi', cat: 'Essencial', pri: 'Alta', qtd: 1, preco_min: 150, preco_max: 600, obs: '1 roteador dual-band cobre 68 m².' },
+  { amb: 'Geral / Tecnologia', nome: 'Régua de tomadas', cat: 'Essencial', pri: 'Alta', qtd: 4, preco_min: 40, preco_max: 150, obs: '3–4 réguas com proteção contra surto.' },
+  { amb: 'Geral / Tecnologia', nome: 'Aspirador de pó', cat: 'Essencial', pri: 'Média', qtd: 1, preco_min: 300, preco_max: 2000, obs: 'Aspirador sem fio ou robô para 68 m².' },
+  { amb: 'Geral / Tecnologia', nome: 'Ar-condicionado split', cat: 'Essencial', pri: 'Alta', qtd: 3, preco_min: 1200, preco_max: 3500, obs: 'Sala: 9.000–12.000 BTU; quartos: 7.000–9.000 BTU cada.' },
+  { amb: 'Geral / Tecnologia', nome: 'Luminária teto / pendentes', cat: 'Essencial', pri: 'Alta', qtd: 4, preco_min: 80, preco_max: 400, obs: 'Verifique pontos de luz instalados em cada cômodo.' },
+  { amb: 'Geral / Tecnologia', nome: 'Cortinas ou persianas', cat: 'Essencial', pri: 'Alta', qtd: 4, preco_min: 150, preco_max: 800, obs: 'Blackout nos quartos melhora o sono. Meça as janelas antes.' },
+  { amb: 'Geral / Tecnologia', nome: 'Caixa de ferramentas', cat: 'Não Essencial', pri: 'Média', qtd: 1, preco_min: 80, preco_max: 300, obs: 'Kit básico: martelo, chaves, alicate, fita métrica.' },
+  { amb: 'Geral / Tecnologia', nome: 'Parafusadeira elétrica', cat: 'Não Essencial', pri: 'Média', qtd: 1, preco_min: 150, preco_max: 600, obs: 'Parafusadeira/furadeira bivolt. Útil na montagem de móveis.' },
+]
