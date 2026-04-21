@@ -26,8 +26,6 @@ function applyFilter(item: Item, filter: FilterType): boolean {
     case 'Essencial':     return item.cat === 'Essencial'
     case 'Não Essencial': return item.cat === 'Não Essencial'
     case 'Alta':          return item.pri === 'Alta'
-    case 'pendente':      return !item.comprado
-    case 'comprado':      return item.comprado
-    default:              return true
-  }
-}
+    case 'pendentes':     return !item.comprado
+    case 'comprados':     return item.comprado
+    default:  

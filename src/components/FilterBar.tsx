@@ -6,8 +6,8 @@ const FILTERS: { id: FilterType; label: string }[] = [
   { id: 'Essencial',      label: 'Essencial' },
   { id: 'Não Essencial',  label: 'Não essencial' },
   { id: 'Alta',           label: 'Urgente' },
-  { id: 'pendente',       label: 'Pendentes' },
-  { id: 'comprado',       label: 'Comprados' },
+  { id: 'pendentes',      label: 'Pendentes' },
+  { id: 'comprados',      label: 'Comprados' },
 ]
 
 interface Props {
