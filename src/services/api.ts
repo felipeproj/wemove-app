@@ -85,6 +85,21 @@ export const listApi = {
     request<GenerateListResult>('POST', '/lists/generate', payload),
 }
 
+// ── Sugestão de item ──────────────────────────────────────────────────────────
+
+export interface SuggestItemResult {
+  inappropriate: boolean
+  reason?: string
+  preco_min?: number
+  preco_max?: number
+  obs?: string
+}
+
+export const suggestApi = {
+  suggest: (nome: string, amb: string, cat: string) =>
+    request<SuggestItemResult>('POST', '/items/suggest', { nome, amb, cat }),
+}
+
 // ── Itens ─────────────────────────────────────────────────────────────────────
 
 export const itemApi = {
