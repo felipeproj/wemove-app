@@ -98,4 +98,5 @@ export const itemApi = {
 
   /** Remove um item (requer edit_token) */
   remove: (token: string, itemId: string) =>
-    request<{ ok: boolean; deleted: stri
+    request<{ ok: boolean; deleted: string }>('DELETE', `/lists/${token}/items/${itemId}`),
+}

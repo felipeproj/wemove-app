@@ -100,4 +100,10 @@ export type FilterType =
   | 'todos'
   | 'Essencial'
   | 'Não Essencial'
-  | 'Alt
+  | 'Alta'
+  | 'Média'
+  | 'Baixa'
+  | 'comprados'
+  | 'pendentes'
+
+export type TabType = 'lista' | 'resumo' | 'dash'

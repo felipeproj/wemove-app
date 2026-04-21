@@ -63,8 +63,6 @@ function setTokenInUrl(token: string): void {
   window.history.replaceState({}, '', url.toString())
 }
 
-const BATCH_SIZE = 8
-
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 export const useListStore = create<ListStore>((set, get) => ({
@@ -176,4 +174,8 @@ export const useListStore = create<ListStore>((set, get) => ({
     await get().updateItem(itemId, { comprado: false, gasto: 0, loja: '' })
   },
 
-  // ── UI ───────────────────────────────────────�
+  // ── UI ────────────────────────────────────────────────────────────────────
+
+  setFilter: (filter) => set({ filter }),
+  setTab: (tab) => set({ tab }),
+}))
