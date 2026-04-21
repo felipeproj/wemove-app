@@ -15,15 +15,6 @@ type View = 'home' | 'access' | 'generate'
 
 // ── Ícones inline ────────────────────────────────────────────────────────────
 
-function IconBox() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
-      <path d="M16 3H8L6 7h12l-2-4z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
 function IconSparkle() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
