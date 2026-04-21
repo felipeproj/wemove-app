@@ -7,7 +7,6 @@
 
 import { create } from 'zustand'
 import { listApi, itemApi } from '../services/api'
-import { INITIAL_ITEMS } from '../data/initialItems'
 import type {
   Item,
   Permission,
@@ -32,10 +31,12 @@ interface ListStore {
   loading: boolean
   loadingMessage: string
   error: string | null
+  needsSetup: boolean   // true quando não há token na URL → mostra GeneratePage
 
   // actions — inicialização
   initList: () => Promise<void>
   refreshItems: () => Promise<void>
+  setTokenAndInit: (token: string) => Promise<void>
 
   // actions — itens
   addItem: (payload: CreateItemPayload) => Promise<Item>
@@ -76,44 +77,51 @@ export const useListStore = create<ListStore>((set, get) => ({
   loading: false,
   loadingMessage: '',
   error: null,
+  needsSetup: false,
 
   // ── Inicialização ──────────────────────────────────────────────────────────
 
   initList: async () => {
     const urlToken = getTokenFromUrl()
-    set({ loading: true, loadingMessage: urlToken ? '⏳ carregando lista...' : '⏳ criando lista...', error: null })
+
+    // Sem token → mostrar formulário de geração por IA
+    if (!urlToken) {
+      set({ needsSetup: true, loading: false, loadingMessage: '', error: null })
+      return
+    }
+
+    set({ loading: true, loadingMessage: 'Carregando lista...', error: null, needsSetup: false })
 
     try {
-      if (urlToken) {
-        // Lista existente
-        const data = await listApi.get(urlToken)
-        set({
-          token: urlToken,
-          permission: data.permission,
-          listTitle: data.title,
-          items: data.items,
-          loading: false,
-          loadingMessage: '',
-        })
-      } else {
-        // Nova lista — cria e pré-popula
-        const created = await listApi.create({ title: 'Minha Mudança — Família Novais' })
-        const newToken = created.edit_token
-        setTokenInUrl(newToken)
-        set({ token: newToken, permission: 'edit', listTitle: created.title, loadingMessage: '⏳ importando itens...' })
+      const data = await listApi.get(urlToken)
+      set({
+        token: urlToken,
+        permission: data.permission,
+        listTitle: data.title,
+        items: data.items,
+        loading: false,
+        loadingMessage: '',
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido'
+      set({ loading: false, loadingMessage: '', error: message })
+    }
+  },
 
-        const allItems: Item[] = []
-        for (let i = 0; i < INITIAL_ITEMS.length; i += BATCH_SIZE) {
-          const batch = INITIAL_ITEMS.slice(i, i + BATCH_SIZE)
-          const results = await Promise.all(
-            batch.map((item) => itemApi.create(newToken, item)),
-          )
-          allItems.push(...results)
-          set({ loadingMessage: `⏳ importando... ${allItems.length}/${INITIAL_ITEMS.length}` })
-        }
-
-        set({ items: allItems, loading: false, loadingMessage: '' })
-      }
+  // Chamado pela GeneratePage após receber o token da IA
+  setTokenAndInit: async (token: string) => {
+    setTokenInUrl(token)
+    set({ needsSetup: false, loading: true, loadingMessage: 'Carregando sua lista...', error: null })
+    try {
+      const data = await listApi.get(token)
+      set({
+        token,
+        permission: data.permission,
+        listTitle: data.title,
+        items: data.items,
+        loading: false,
+        loadingMessage: '',
+      })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido'
       set({ loading: false, loadingMessage: '', error: message })
@@ -168,8 +176,4 @@ export const useListStore = create<ListStore>((set, get) => ({
     await get().updateItem(itemId, { comprado: false, gasto: 0, loja: '' })
   },
 
-  // ── UI ─────────────────────────────────────────────────────────────────────
-
-  setFilter: (filter) => set({ filter }),
-  setTab: (tab) => set({ tab }),
-}))
+  // ── UI ───────────────────────────────────────�

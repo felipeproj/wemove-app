@@ -76,14 +76,28 @@ export interface ShareLinks {
   view_link: string
 }
 
+export type Padrao = 'Simples' | 'Médio' | 'Alto'
+
+export interface GenerateListPayload {
+  metros: number
+  comodos: Room[]
+  padrao: Padrao
+  orcamento?: number
+  ja_possui?: string
+}
+
+export interface GenerateListResult {
+  edit_token: string
+  view_token: string
+  list_id: string
+  title: string
+  items_count: number
+}
+
 // ── UI ────────────────────────────────────────────────────────────────────────
 
 export type FilterType =
   | 'todos'
   | 'Essencial'
   | 'Não Essencial'
-  | 'Alta'
-  | 'pendente'
-  | 'comprado'
-
-export type TabType = 'lista' | 'resumo' | 'dash'
+  | 'Alt

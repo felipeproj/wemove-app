@@ -13,6 +13,8 @@ import type {
   CreateItemPayload,
   UpdateItemPayload,
   ShareLinks,
+  GenerateListPayload,
+  GenerateListResult,
 } from '../types'
 
 const BASE_URL = import.meta.env.VITE_API_URL as string
@@ -77,6 +79,10 @@ export const listApi = {
   /** Gera links de compartilhamento (requer edit_token) */
   share: (token: string) =>
     request<ShareLinks>('GET', `/lists/${token}/share`),
+
+  /** Gera lista personalizada via IA */
+  generate: (payload: GenerateListPayload) =>
+    request<GenerateListResult>('POST', '/lists/generate', payload),
 }
 
 // ── Itens ─────────────────────────────────────────────────────────────────────
@@ -92,10 +98,4 @@ export const itemApi = {
 
   /** Remove um item (requer edit_token) */
   remove: (token: string, itemId: string) =>
-    request<{ ok: boolean; deleted: string }>(
-      'DELETE',
-      `/lists/${token}/items/${itemId}`,
-    ),
-}
-
-export { ApiError }
+    request<{ ok: boolean; deleted: stri

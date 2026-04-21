@@ -5,6 +5,7 @@ import { BottomNav } from './components/BottomNav'
 import { ListaPage } from './pages/ListaPage'
 import { ResumoPage } from './pages/ResumoPage'
 import { DashPage } from './pages/DashPage'
+import { GeneratePage } from './pages/GeneratePage'
 import { usePolling } from './hooks/usePolling'
 
 export default function App() {
@@ -13,9 +14,19 @@ export default function App() {
   const loadingMsg = useListStore((s) => s.loadingMessage)
   const error      = useListStore((s) => s.error)
   const tab        = useListStore((s) => s.tab)
+  const needsSetup = useListStore((s) => s.needsSetup)
 
   useEffect(() => { initList() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   usePolling()
+
+  // ── Generate (sem token na URL) ───────────────────────────────────────────
+  if (needsSetup) {
+    return (
+      <div className="min-h-screen bg-bg">
+        <GeneratePage />
+      </div>
+    )
+  }
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
