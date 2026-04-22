@@ -53,5 +53,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
   signOut: async () => {
     await supabase.auth.signOut()
     set({ user: null })
+    // Importação dinâmica para evitar dependência circular entre stores.
+    // Reseta o estado da lista e força retorno à LandingPage.
+    const { useListStore } = await import('./useListStore')
+    useListStore.getState().goToLanding()
   },
 }))

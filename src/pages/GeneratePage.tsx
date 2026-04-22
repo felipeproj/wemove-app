@@ -3,7 +3,7 @@
  * Exibida dentro da LandingPage quando o usuário escolhe "Iniciar nova mudança".
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { listApi } from '../services/api'
 import { useListStore } from '../store/useListStore'
 import { WeMoveIcon } from '../components/WeMoveIcon'
@@ -30,6 +30,43 @@ const LOADING_MSGS = [
   'Calculando estimativas de preço...',
   'Quase pronto, organizando os itens...',
 ]
+
+const TITLE_PLACEHOLDERS = [
+  'Meu primeiro apartamento ✨',
+  'Casa nova, vida nova 🏡',
+  'Mudança dos sonhos...',
+  'Novo lar em São Paulo 🌆',
+  'Apartamento 2025 🎉',
+]
+
+/** Label animado que cicla entre sugestões de nome */
+function AnimatedPlaceholder({ visible }: { visible: boolean }) {
+  const [idx, setIdx] = useState(0)
+  const [fade, setFade] = useState(true)
+
+  useEffect(() => {
+    if (!visible) return
+    const interval = setInterval(() => {
+      setFade(false)
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % TITLE_PLACEHOLDERS.length)
+        setFade(true)
+      }, 300)
+    }, 2800)
+    return () => clearInterval(interval)
+  }, [visible])
+
+  if (!visible) return null
+
+  return (
+    <span
+      className="text-ink-3 font-normal pointer-events-none transition-opacity duration-300"
+      style={{ opacity: fade ? 1 : 0 }}
+    >
+      {TITLE_PLACEHOLDERS[idx]}
+    </span>
+  )
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +107,9 @@ export function GeneratePage({ onBack }: GeneratePageProps = {}) {
   const [step,       setStep]       = useState<'form' | 'loading' | 'done'>('form')
   const [loadingMsg, setLoadingMsg] = useState('')
   const [error,      setError]      = useState<string | null>(null)
+
+  // Nome da mudança
+  const [titulo,    setTitulo]    = useState('')
 
   // Dados do imóvel
   const [metros,    setMetros]    = useState('')
@@ -138,6 +178,7 @@ export function GeneratePage({ onBack }: GeneratePageProps = {}) {
 
     try {
       const result = await listApi.generate({
+        titulo:          titulo.trim() || undefined,
         metros:          Number(metros),
         comodos,
         padrao,
@@ -208,6 +249,31 @@ export function GeneratePage({ onBack }: GeneratePageProps = {}) {
       </div>
 
       <div className="space-y-5">
+
+        {/* Nome da mudança */}
+        <div className="bg-white rounded-2xl border border-border p-5">
+          <label className={labelCls}>
+            Nome da sua mudança
+            <span className="ml-2 text-xs font-normal text-ink-3">(opcional)</span>
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              maxLength={100}
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder=" "
+              className={inputCls + ' peer'}
+            />
+            {/* Placeholder animado — some quando há texto */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none peer-focus:hidden peer-[:not(:placeholder-shown)]:hidden">
+              <AnimatedPlaceholder visible={titulo === ''} />
+            </div>
+          </div>
+          <p className="text-xs text-ink-3 mt-1.5">
+            Esse nome vai aparecer na sua lista de mudanças
+          </p>
+        </div>
 
         {/* Tamanho */}
         <div className="bg-white rounded-2xl border border-border p-5">

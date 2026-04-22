@@ -242,20 +242,20 @@ export function LandingPage() {
 
   const [view, setView] = useState<View>('home')
 
+  // Redireciona quando auth termina de carregar
   useEffect(() => {
-    if (authLoading) return  // aguarda auth resolver
-
+    if (authLoading) return
     const pending = consumePendingView()
-    if (pending) {
-      setView(pending)
-      return
-    }
-
-    // Usuário logado nunca deve ver a home — vai direto para sua área
-    if (user) {
-      setView('user-area')
-    }
+    if (pending) { setView(pending); return }
+    if (user) setView('user-area')   // logado → vai para sua área
   }, [authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Segurança: quando usuário faz logout enquanto está em user-area → vai para home
+  useEffect(() => {
+    if (!authLoading && !user && view === 'user-area') {
+      setView('home')
+    }
+  }, [user, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Enquanto auth carrega, mostra tela vazia com gradiente
   if (authLoading && view === 'home') {

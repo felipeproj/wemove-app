@@ -296,6 +296,7 @@ export function UserAreaPage({ onCreateNew }: Props) {
   const [listsError,   setListsError]   = useState<string | null>(null)
   const [showLinkForm, setShowLinkForm] = useState(false)
   const [linkSuccess,  setLinkSuccess]  = useState<string | null>(null)
+  const [search,       setSearch]       = useState('')
 
   // paginação
   const [page,     setPage]     = useState(1)
@@ -323,8 +324,15 @@ export function UserAreaPage({ onCreateNew }: Props) {
     setTimeout(() => setLinkSuccess(null), 4000)
   }
 
-  const totalPages  = Math.max(1, Math.ceil(lists.length / pageSize))
-  const paginatedLists = lists.slice((page - 1) * pageSize, page * pageSize)
+  // Busca por nome (partial match, case-insensitive)
+  const filteredLists = search.trim()
+    ? lists.filter((l) =>
+        (l.title || '').toLowerCase().includes(search.trim().toLowerCase())
+      )
+    : lists
+
+  const totalPages     = Math.max(1, Math.ceil(filteredLists.length / pageSize))
+  const paginatedLists = filteredLists.slice((page - 1) * pageSize, page * pageSize)
 
   const email = user?.email ?? ''
 
@@ -332,25 +340,69 @@ export function UserAreaPage({ onCreateNew }: Props) {
     <div className="w-full max-w-3xl mx-auto">
 
       {/* Cabeçalho da seção */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="font-display font-bold text-ink text-lg">Minhas listas</h2>
-          <p className="text-xs text-ink-2 mt-0.5 truncate max-w-[240px]">{email}</p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-display font-bold text-ink text-lg">Minhas listas</h2>
+            <p className="text-xs text-ink-2 mt-0.5 truncate max-w-[200px]">{email}</p>
+          </div>
+
+          {/* Ações */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Botão vincular lista */}
+            {!showLinkForm && (
+              <button
+                onClick={() => setShowLinkForm(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+                <span className="hidden sm:inline">Vincular</span>
+              </button>
+            )}
+
+            {/* Botão nova lista */}
+            <button
+              onClick={onCreateNew}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+              </svg>
+              <span className="hidden sm:inline">Nova lista</span>
+              <span className="sm:hidden">Nova</span>
+            </button>
+          </div>
         </div>
 
-        {/* Botão vincular lista */}
-        {!showLinkForm && lists.length > 0 && (
-          <button
-            onClick={() => setShowLinkForm(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue transition-all"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        {/* Campo de busca */}
+        {lists.length > 0 && (
+          <div className="relative">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
-            <span className="hidden sm:inline">Vincular lista</span>
-            <span className="sm:hidden">Vincular</span>
-          </button>
+            <input
+              type="text"
+              placeholder="Buscar pelo nome da mudança..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+              className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl text-sm text-ink bg-white placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
+            />
+            {search && (
+              <button
+                onClick={() => { setSearch(''); setPage(1) }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -389,6 +441,13 @@ export function UserAreaPage({ onCreateNew }: Props) {
           onCreateNew={onCreateNew}
           onLinkList={() => setShowLinkForm(true)}
         />
+      ) : filteredLists.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-ink-2 text-sm">Nenhuma lista encontrada para <strong>"{search}"</strong></p>
+          <button onClick={() => setSearch('')} className="mt-2 text-xs text-wm-blue underline">
+            Limpar busca
+          </button>
+        </div>
       ) : (
         <>
           {/* Desktop: cabeçalho de colunas */}
@@ -416,7 +475,7 @@ export function UserAreaPage({ onCreateNew }: Props) {
             page={page}
             totalPages={totalPages}
             pageSize={pageSize}
-            total={lists.length}
+            total={filteredLists.length}
             onPage={(p) => setPage(p)}
             onPageSize={(s) => setPageSize(s)}
           />

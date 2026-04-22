@@ -79,6 +79,7 @@ export interface ShareLinks {
 export type Padrao = 'Simples' | 'Médio' | 'Alto'
 
 export interface GenerateListPayload {
+  titulo?: string           // nome da mudança escolhido pelo usuário
   metros: number
   comodos: Room[]
   padrao: Padrao
