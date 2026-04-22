@@ -1,19 +1,22 @@
 /**
  * UserAreaPage — área logada do usuário.
  *
- * Exibe todas as listas associadas à conta, permite abrir uma lista,
- * vincular uma lista existente pelo token e fazer logout.
+ * Exibe todas as listas associadas à conta com paginação,
+ * permite abrir, vincular e criar novas listas.
  */
 
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useListStore } from '../store/useListStore'
 import { userApi, type UserList } from '../services/api'
-import { WeMoveIcon } from '../components/WeMoveIcon'
 
 interface Props {
-  onBack: () => void
+  onCreateNew: () => void   // navega para o fluxo de geração de lista
 }
+
+type PageSize = 10 | 25 | 50 | 100
+
+// ── Barra de progresso ────────────────────────────────────────────────────────
 
 function ProgressBar({ value, total }: { value: number; total: number }) {
   const pct = total === 0 ? 0 : Math.round((value / total) * 100)
@@ -30,58 +33,275 @@ function ProgressBar({ value, total }: { value: number; total: number }) {
   )
 }
 
-function ListCard({ list, onOpen }: { list: UserList; onOpen: () => void }) {
+// ── Card de lista (mobile) / Row (desktop) ────────────────────────────────────
+
+function ListRow({ list, onOpen }: { list: UserList; onOpen: () => void }) {
   const pct = list.items_count === 0 ? 0 : Math.round((list.items_bought / list.items_count) * 100)
-  const date = new Date(list.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  const date = new Date(list.created_at).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  })
 
   return (
     <button
       onClick={onOpen}
       className="w-full text-left bg-white rounded-2xl border border-border p-4 shadow-card hover:border-wm-blue hover:shadow-btn transition-all group"
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
+      {/* Mobile layout */}
+      <div className="flex items-start justify-between gap-3 mb-2 md:hidden">
         <div className="min-w-0">
           <p className="font-display font-bold text-ink text-sm leading-snug truncate group-hover:text-wm-blue transition-colors">
             {list.title || 'Lista sem título'}
           </p>
           <p className="text-xs text-ink-3 mt-0.5">{date}</p>
         </div>
-        <span className={[
-          'flex-shrink-0 text-xs font-semibold px-2 py-1 rounded-full border',
-          pct === 100
-            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-            : 'bg-blue-50 text-wm-blue border-blue-200',
-        ].join(' ')}>
-          {pct === 100 ? '✓ Concluída' : `${pct}%`}
-        </span>
+        <StatusBadge pct={pct} />
+      </div>
+      <div className="md:hidden">
+        <ProgressBar value={list.items_bought} total={list.items_count} />
+        <p className="text-xs text-ink-3 mt-1.5">
+          {list.items_bought} de {list.items_count} {list.items_count === 1 ? 'item' : 'itens'} comprados
+        </p>
       </div>
 
-      <ProgressBar value={list.items_bought} total={list.items_count} />
-
-      <p className="text-xs text-ink-3 mt-2">
-        {list.items_bought} de {list.items_count} {list.items_count === 1 ? 'item comprado' : 'itens comprados'}
-      </p>
+      {/* Desktop layout — row estilo tabela */}
+      <div className="hidden md:flex items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="font-display font-semibold text-ink text-sm truncate group-hover:text-wm-blue transition-colors">
+            {list.title || 'Lista sem título'}
+          </p>
+        </div>
+        <p className="text-xs text-ink-3 whitespace-nowrap w-28 text-right">{date}</p>
+        <div className="w-32">
+          <ProgressBar value={list.items_bought} total={list.items_count} />
+          <p className="text-[11px] text-ink-3 mt-1">
+            {list.items_bought}/{list.items_count} itens
+          </p>
+        </div>
+        <StatusBadge pct={pct} />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-ink-3 group-hover:text-wm-blue transition-colors flex-shrink-0">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </div>
     </button>
   )
 }
 
-export function UserAreaPage({ onBack }: Props) {
-  const user        = useAuthStore((s) => s.user)
-  const signOut     = useAuthStore((s) => s.signOut)
+function StatusBadge({ pct }: { pct: number }) {
+  return (
+    <span className={[
+      'flex-shrink-0 text-xs font-semibold px-2 py-1 rounded-full border',
+      pct === 100
+        ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+        : 'bg-blue-50 text-wm-blue border-blue-200',
+    ].join(' ')}>
+      {pct === 100 ? '✓ Concluída' : `${pct}%`}
+    </span>
+  )
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyState({
+  onCreateNew,
+  onLinkList,
+}: {
+  onCreateNew: () => void
+  onLinkList: () => void
+}) {
+  return (
+    <div className="py-8">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-bg border border-border flex items-center justify-center mx-auto mb-4">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="5" width="18" height="16" rx="2" stroke="#94A3B8" strokeWidth="1.8"/>
+            <path d="M7 10h10M7 14h6" stroke="#94A3B8" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <p className="font-display font-bold text-ink text-base mb-1">Nenhuma lista ainda</p>
+        <p className="text-sm text-ink-2 max-w-xs mx-auto">
+          Crie uma nova lista com IA ou vincule uma lista que você já tem.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+        {/* Criar nova */}
+        <button
+          onClick={onCreateNew}
+          className="flex flex-col items-start gap-3 p-5 rounded-2xl gradient-bg shadow-btn hover:opacity-95 hover:scale-[1.02] transition-all text-left"
+        >
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"
+                stroke="white" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-white font-display font-bold text-sm">Criar com IA</p>
+            <p className="text-white/80 text-xs mt-0.5">Conte sobre seu imóvel e gere uma lista personalizada</p>
+          </div>
+        </button>
+
+        {/* Vincular existente */}
+        <button
+          onClick={onLinkList}
+          className="flex flex-col items-start gap-3 p-5 rounded-2xl border-2 border-border bg-white shadow-card hover:border-wm-blue hover:shadow-btn transition-all text-left"
+        >
+          <div className="w-10 h-10 rounded-xl bg-wm-blue/10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-ink font-display font-bold text-sm">Vincular lista</p>
+            <p className="text-ink-2 text-xs mt-0.5">Adicione uma lista existente à sua conta</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Link form inline ──────────────────────────────────────────────────────────
+
+function LinkForm({ onLinked, onCancel }: { onLinked: () => void; onCancel: () => void }) {
+  const [token,   setToken]   = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState<string | null>(null)
+
+  async function handleLink() {
+    const t = token.trim()
+    if (!t) { setError('Cole o token da lista.'); return }
+    setError(null)
+    setLoading(true)
+    try {
+      await userApi.claimList(t)
+      onLinked()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Token inválido ou lista já vinculada')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-border p-4 shadow-card space-y-3">
+      <p className="text-xs text-ink-2 leading-relaxed">
+        Cole o token de edição da lista. Ele fica na URL após{' '}
+        <span className="font-mono bg-bg text-ink px-1 rounded">?lista=</span>
+      </p>
+      <input
+        type="text"
+        placeholder="Cole o token aqui..."
+        value={token}
+        onChange={(e) => { setToken(e.target.value); setError(null) }}
+        onKeyDown={(e) => e.key === 'Enter' && handleLink()}
+        autoFocus
+        className="w-full px-3 py-2.5 border border-border rounded-xl text-sm text-ink bg-bg placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all font-mono"
+      />
+      {error && <p className="text-xs text-red-600">⚠️ {error}</p>}
+      <div className="flex gap-2">
+        <button
+          onClick={handleLink}
+          disabled={loading || !token.trim()}
+          className="flex-1 py-2.5 rounded-xl font-semibold text-sm gradient-bg text-white shadow-btn hover:opacity-90 disabled:opacity-50 transition-all"
+        >
+          {loading ? 'Vinculando...' : 'Vincular →'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-border text-ink-2 hover:bg-bg transition-all"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Paginação ─────────────────────────────────────────────────────────────────
+
+function Pagination({
+  page,
+  totalPages,
+  pageSize,
+  total,
+  onPage,
+  onPageSize,
+}: {
+  page: number
+  totalPages: number
+  pageSize: PageSize
+  total: number
+  onPage: (p: number) => void
+  onPageSize: (s: PageSize) => void
+}) {
+  if (total === 0) return null
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-border">
+      <div className="flex items-center gap-2 text-xs text-ink-2">
+        <span>Itens por página:</span>
+        {([10, 25, 50, 100] as PageSize[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => { onPageSize(s); onPage(1) }}
+            className={[
+              'px-2.5 py-1 rounded-lg font-semibold border transition-all',
+              pageSize === s
+                ? 'border-wm-blue bg-wm-blue/5 text-wm-blue'
+                : 'border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue',
+            ].join(' ')}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-ink-2">
+          {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} de {total}
+        </span>
+        <button
+          onClick={() => onPage(page - 1)}
+          disabled={page === 1}
+          className="w-8 h-8 rounded-xl border border-border flex items-center justify-center text-ink-2 hover:border-wm-blue hover:text-wm-blue disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <button
+          onClick={() => onPage(page + 1)}
+          disabled={page >= totalPages}
+          className="w-8 h-8 rounded-xl border border-border flex items-center justify-center text-ink-2 hover:border-wm-blue hover:text-wm-blue disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── UserAreaPage ──────────────────────────────────────────────────────────────
+
+export function UserAreaPage({ onCreateNew }: Props) {
+  const user            = useAuthStore((s) => s.user)
   const setTokenAndInit = useListStore((s) => s.setTokenAndInit)
 
-  const [lists,       setLists]       = useState<UserList[]>([])
+  const [lists,        setLists]        = useState<UserList[]>([])
   const [listsLoading, setListsLoading] = useState(true)
   const [listsError,   setListsError]   = useState<string | null>(null)
-  const [linkToken,    setLinkToken]    = useState('')
-  const [linking,      setLinking]      = useState(false)
-  const [linkError,    setLinkError]    = useState<string | null>(null)
-  const [linkSuccess,  setLinkSuccess]  = useState<string | null>(null)
   const [showLinkForm, setShowLinkForm] = useState(false)
+  const [linkSuccess,  setLinkSuccess]  = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchLists()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // paginação
+  const [page,     setPage]     = useState(1)
+  const [pageSize, setPageSize] = useState<PageSize>(10)
+
+  useEffect(() => { fetchLists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchLists() {
     setListsLoading(true)
@@ -96,175 +316,112 @@ export function UserAreaPage({ onBack }: Props) {
     }
   }
 
-  async function handleLink() {
-    const t = linkToken.trim()
-    if (!t) { setLinkError('Cole o token da lista.'); return }
-    setLinkError(null)
-    setLinking(true)
-    try {
-      await userApi.claimList(t)
-      setLinkSuccess('Lista vinculada com sucesso!')
-      setLinkToken('')
-      setShowLinkForm(false)
-      await fetchLists()
-    } catch (e) {
-      setLinkError(e instanceof Error ? e.message : 'Token inválido ou lista já vinculada')
-    } finally {
-      setLinking(false)
-    }
+  async function handleLinked() {
+    setShowLinkForm(false)
+    setLinkSuccess('Lista vinculada com sucesso!')
+    await fetchLists()
+    setTimeout(() => setLinkSuccess(null), 4000)
   }
 
-  async function handleSignOut() {
-    await signOut()
-    onBack()
-  }
-
-  function openList(editToken: string) {
-    setTokenAndInit(editToken)
-  }
+  const totalPages  = Math.max(1, Math.ceil(lists.length / pageSize))
+  const paginatedLists = lists.slice((page - 1) * pageSize, page * pageSize)
 
   const email = user?.email ?? ''
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Back */}
-      <button
-        onClick={onBack}
-        className="self-start flex items-center gap-2 text-sm text-ink-2 hover:text-ink transition-colors mb-8"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-        Voltar
-      </button>
+    <div className="w-full max-w-3xl mx-auto">
 
-      <div className="w-full max-w-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl gradient-bg flex items-center justify-center shadow-btn">
-              <WeMoveIcon size={22} />
-            </div>
-            <div>
-              <p className="font-display font-bold text-ink text-base">Minha conta</p>
-              <p className="text-xs text-ink-2 truncate max-w-[200px]">{email}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border text-ink-2 hover:border-red-300 hover:text-red-600 transition-all"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Sair
-          </button>
+      {/* Cabeçalho da seção */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="font-display font-bold text-ink text-lg">Minhas listas</h2>
+          <p className="text-xs text-ink-2 mt-0.5 truncate max-w-[240px]">{email}</p>
         </div>
 
-        {/* Link success */}
-        {linkSuccess && (
-          <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-700">
-            ✓ {linkSuccess}
-          </div>
-        )}
-
-        {/* Lists section */}
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display font-bold text-ink text-sm">Minhas listas</h3>
+        {/* Botão vincular lista */}
+        {!showLinkForm && lists.length > 0 && (
           <button
-            onClick={() => { setShowLinkForm((v) => !v); setLinkError(null) }}
-            className="flex items-center gap-1.5 text-xs font-semibold text-wm-blue hover:opacity-80 transition-opacity"
+            onClick={() => setShowLinkForm(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue transition-all"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
-            Vincular lista
+            <span className="hidden sm:inline">Vincular lista</span>
+            <span className="sm:hidden">Vincular</span>
+          </button>
+        )}
+      </div>
+
+      {/* Feedback de vínculo */}
+      {linkSuccess && (
+        <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-700">
+          ✓ {linkSuccess}
+        </div>
+      )}
+
+      {/* Formulário de vínculo inline */}
+      {showLinkForm && (
+        <div className="mb-4">
+          <LinkForm
+            onLinked={handleLinked}
+            onCancel={() => { setShowLinkForm(false) }}
+          />
+        </div>
+      )}
+
+      {/* Estados de loading / erro */}
+      {listsLoading ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-ink-3">
+          <div className="w-6 h-6 border-2 border-border border-t-wm-blue rounded-full animate-spin" />
+          <p className="text-sm">Carregando listas...</p>
+        </div>
+      ) : listsError ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-5 text-sm text-red-700 text-center">
+          ⚠️ {listsError}
+          <button onClick={fetchLists} className="mt-2 block mx-auto text-xs underline">
+            Tentar novamente
           </button>
         </div>
+      ) : lists.length === 0 ? (
+        <EmptyState
+          onCreateNew={onCreateNew}
+          onLinkList={() => setShowLinkForm(true)}
+        />
+      ) : (
+        <>
+          {/* Desktop: cabeçalho de colunas */}
+          <div className="hidden md:flex items-center gap-4 px-4 pb-2 text-xs font-bold uppercase tracking-wider text-ink-3">
+            <span className="flex-1">Lista</span>
+            <span className="w-28 text-right">Data</span>
+            <span className="w-32">Progresso</span>
+            <span className="w-20 text-center">Status</span>
+            <span className="w-5" />
+          </div>
 
-        {/* Link form */}
-        {showLinkForm && (
-          <div className="mb-4 bg-white rounded-2xl border border-border p-4 shadow-card space-y-3">
-            <p className="text-xs text-ink-2 leading-relaxed">
-              Cole o token de edição da lista que deseja vincular à sua conta.
-              O token fica na URL após <span className="font-mono bg-bg text-ink px-1 rounded">?lista=</span>
-            </p>
-            <input
-              type="text"
-              placeholder="Cole o token aqui..."
-              value={linkToken}
-              onChange={(e) => { setLinkToken(e.target.value); setLinkError(null) }}
-              onKeyDown={(e) => e.key === 'Enter' && handleLink()}
-              autoFocus
-              className="w-full px-3 py-2.5 border border-border rounded-xl text-sm text-ink bg-bg placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all font-mono"
-            />
-            {linkError && (
-              <p className="text-xs text-red-600">⚠️ {linkError}</p>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={handleLink}
-                disabled={linking || !linkToken.trim()}
-                className="flex-1 py-2.5 rounded-xl font-semibold text-sm gradient-bg text-white shadow-btn hover:opacity-90 disabled:opacity-50 transition-all"
-              >
-                {linking ? 'Vinculando...' : 'Vincular →'}
-              </button>
-              <button
-                onClick={() => { setShowLinkForm(false); setLinkError(null); setLinkToken('') }}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-border text-ink-2 hover:bg-bg transition-all"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Lists */}
-        {listsLoading ? (
-          <div className="flex flex-col items-center gap-3 py-12 text-ink-3">
-            <div className="w-6 h-6 border-2 border-border border-t-wm-blue rounded-full animate-spin" />
-            <p className="text-sm">Carregando listas...</p>
-          </div>
-        ) : listsError ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-4 text-sm text-red-700 text-center">
-            ⚠️ {listsError}
-            <button onClick={fetchLists} className="mt-2 block mx-auto text-xs underline">
-              Tentar novamente
-            </button>
-          </div>
-        ) : lists.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-bg border border-border flex items-center justify-center mx-auto mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="5" width="18" height="16" rx="2" stroke="#94A3B8" strokeWidth="1.8"/>
-                <path d="M7 10h10M7 14h6" stroke="#94A3B8" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <p className="font-display font-bold text-ink text-sm mb-1">Nenhuma lista ainda</p>
-            <p className="text-xs text-ink-2 leading-relaxed max-w-xs mx-auto">
-              Crie uma nova lista pela tela inicial ou vincule uma lista existente usando o botão acima.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {lists.map((list) => (
-              <ListCard
+          {/* Lista de cards */}
+          <div className="space-y-2">
+            {paginatedLists.map((list) => (
+              <ListRow
                 key={list.id}
                 list={list}
-                onOpen={() => openList(list.edit_token)}
+                onOpen={() => setTokenAndInit(list.edit_token)}
               />
             ))}
           </div>
-        )}
 
-        {/* Avatar initial indicator */}
-        {lists.length > 0 && (
-          <p className="text-center text-xs text-ink-3 mt-6">
-            {lists.length} {lists.length === 1 ? 'lista' : 'listas'} na sua conta
-          </p>
-        )}
-      </div>
+          {/* Paginação */}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            total={lists.length}
+            onPage={(p) => setPage(p)}
+            onPageSize={(s) => setPageSize(s)}
+          />
+        </>
+      )}
     </div>
   )
 }

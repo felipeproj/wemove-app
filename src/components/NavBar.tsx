@@ -89,12 +89,14 @@ function UserButton() {
 }
 
 export function NavBar() {
-  const tab         = useListStore((s) => s.tab)
-  const setTab      = useListStore((s) => s.setTab)
-  const permission  = useListStore((s) => s.permission)
-  const loading     = useListStore((s) => s.loading)
-  const loadingMsg  = useListStore((s) => s.loadingMessage)
-  const goToLanding = useListStore((s) => s.goToLanding)
+  const tab          = useListStore((s) => s.tab)
+  const setTab       = useListStore((s) => s.setTab)
+  const permission   = useListStore((s) => s.permission)
+  const loading      = useListStore((s) => s.loading)
+  const loadingMsg   = useListStore((s) => s.loadingMessage)
+  const goToLanding  = useListStore((s) => s.goToLanding)
+  const goToUserArea = useListStore((s) => s.goToUserArea)
+  const loggedIn     = !!useAuthStore((s) => s.user)
   const [showShare, setShowShare] = useState(false)
 
   return (
@@ -133,6 +135,20 @@ export function NavBar() {
 
           {/* Direita */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Voltar para minhas listas — só quando logado */}
+            {loggedIn && (
+              <button
+                onClick={goToUserArea}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold border border-border-2 text-ink-2 hover:border-wm-blue hover:text-wm-blue transition-all"
+                title="Minhas listas"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="hidden sm:inline">Minhas listas</span>
+              </button>
+            )}
+
             {permission === 'edit' && !loading && (
               <button
                 onClick={() => setShowShare(true)}
