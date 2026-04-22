@@ -49,8 +49,12 @@ interface ListStore {
   setFilter: (filter: FilterType) => void
   setTab: (tab: TabType) => void
   goToLanding: () => void
+  goToAuth: () => void
+  goToUserArea: () => void
   modalOpen: boolean
   setModalOpen: (open: boolean) => void
+  pendingLandingView: 'auth' | 'user-area' | null
+  consumePendingView: () => 'auth' | 'user-area' | null
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -80,6 +84,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   error: null,
   needsSetup: false,
   modalOpen: false,
+  pendingLandingView: null,
 
   // ── Inicialização ──────────────────────────────────────────────────────────
 
@@ -184,6 +189,12 @@ export const useListStore = create<ListStore>((set, get) => ({
   setTab: (tab) => set({ tab }),
   setModalOpen: (open) => set({ modalOpen: open }),
 
+  consumePendingView: () => {
+    const v = get().pendingLandingView
+    set({ pendingLandingView: null })
+    return v
+  },
+
   goToLanding: () => {
     // Remove token da URL e reseta o estado para exibir a LandingPage
     const url = new URL(window.location.href)
@@ -200,5 +211,15 @@ export const useListStore = create<ListStore>((set, get) => ({
       filter: 'todos',
       tab: 'lista',
     })
+  },
+
+  goToAuth: () => {
+    set({ pendingLandingView: 'auth' })
+    get().goToLanding()
+  },
+
+  goToUserArea: () => {
+    set({ pendingLandingView: 'user-area' })
+    get().goToLanding()
   },
 }))

@@ -2,17 +2,22 @@
  * LandingPage — exibida quando não há ?lista=TOKEN na URL.
  *
  * Views:
- *  'home'     → apresentação do produto + dois CTAs
- *  'access'   → campo para colar o código da lista existente
- *  'generate' → formulário de nova mudança via IA
+ *  'home'       → apresentação do produto + três CTAs
+ *  'access'     → campo para colar o código da lista existente
+ *  'generate'   → formulário de nova mudança via IA
+ *  'auth'       → login / cadastro
+ *  'user-area'  → área do usuário logado
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useListStore } from '../store/useListStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { GeneratePage } from './GeneratePage'
+import { AuthPage } from './AuthPage'
+import { UserAreaPage } from './UserAreaPage'
 import { WeMoveIcon } from '../components/WeMoveIcon'
 
-type View = 'home' | 'access' | 'generate'
+type View = 'home' | 'access' | 'generate' | 'auth' | 'user-area'
 
 // ── Ícones inline ────────────────────────────────────────────────────────────
 
@@ -52,6 +57,8 @@ function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 // ── View: Home ────────────────────────────────────────────────────────────────
 
 function HomeView({ onSelect }: { onSelect: (v: View) => void }) {
+  const user = useAuthStore((s) => s.user)
+
   return (
     <div className="flex flex-col items-center">
       {/* Hero */}
@@ -113,8 +120,44 @@ function HomeView({ onSelect }: { onSelect: (v: View) => void }) {
         </button>
       </div>
 
+      {/* Card: Minha conta (linha separada, menor) */}
+      <div className="w-full max-w-2xl mt-4">
+        <button
+          onClick={() => onSelect(user ? 'user-area' : 'auth')}
+          className="group w-full flex items-center justify-between gap-4 p-4 rounded-2xl border-2 border-border bg-white shadow-card hover:border-wm-blue hover:shadow-btn transition-all text-left"
+        >
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-btn text-white font-bold text-sm flex-shrink-0">
+                {(user.email ?? '?')[0].toUpperCase()}
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#64748B" strokeWidth="1.8" strokeLinecap="round"/>
+                  <circle cx="12" cy="7" r="4" stroke="#64748B" strokeWidth="1.8"/>
+                </svg>
+              </div>
+            )}
+            <div>
+              <p className="text-ink font-semibold text-sm">
+                {user ? 'Minha conta' : 'Entrar / Criar conta'}
+              </p>
+              <p className="text-ink-3 text-xs mt-0.5">
+                {user
+                  ? `Logado como ${user.email}`
+                  : 'Salve suas listas e acesse de qualquer dispositivo'}
+              </p>
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-ink-3 group-hover:text-wm-blue transition-colors">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+
       {/* Features */}
-      <div className="w-full max-w-2xl mt-12 grid grid-cols-3 gap-4 text-center">
+      <div className="w-full max-w-2xl mt-10 grid grid-cols-3 gap-4 text-center">
         {[
           { emoji: '🤖', label: 'Lista gerada por IA' },
           { emoji: '📱', label: 'Funciona offline (PWA)' },
@@ -220,7 +263,14 @@ function AccessView({ onBack }: { onBack: () => void }) {
 // ── LandingPage principal ─────────────────────────────────────────────────────
 
 export function LandingPage() {
+  const consumePendingView = useListStore((s) => s.consumePendingView)
   const [view, setView] = useState<View>('home')
+
+  // Se alguém chamou goToAuth() ou goToUserArea(), aplica o destino
+  useEffect(() => {
+    const pending = consumePendingView()
+    if (pending) setView(pending)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-bg">
@@ -236,9 +286,16 @@ export function LandingPage() {
           </div>
         )}
 
-        {view === 'home'     && <HomeView onSelect={setView} />}
-        {view === 'access'   && <AccessView onBack={() => setView('home')} />}
-        {view === 'generate' && <GeneratePage onBack={() => setView('home')} />}
+        {view === 'home'      && <HomeView onSelect={setView} />}
+        {view === 'access'    && <AccessView onBack={() => setView('home')} />}
+        {view === 'generate'  && <GeneratePage onBack={() => setView('home')} />}
+        {view === 'auth'      && (
+          <AuthPage
+            onBack={() => setView('home')}
+            onSuccess={() => setView('user-area')}
+          />
+        )}
+        {view === 'user-area' && <UserAreaPage onBack={() => setView('home')} />}
       </div>
     </div>
   )

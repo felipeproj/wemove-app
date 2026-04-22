@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useListStore } from './store/useListStore'
+import { useAuthStore } from './store/useAuthStore'
 import { WeMoveIcon } from './components/WeMoveIcon'
 import { NavBar } from './components/NavBar'
 import { BottomNav } from './components/BottomNav'
@@ -16,8 +17,10 @@ export default function App() {
   const error      = useListStore((s) => s.error)
   const tab        = useListStore((s) => s.tab)
   const needsSetup = useListStore((s) => s.needsSetup)
+  const initAuth   = useAuthStore((s) => s.init)
 
   useEffect(() => { initList() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const unsub = initAuth(); return unsub }, []) // eslint-disable-line react-hooks/exhaustive-deps
   usePolling()
 
   // ── Landing (sem token na URL) ────────────────────────────────────────────

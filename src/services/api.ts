@@ -3,6 +3,7 @@
  *
  * Todas as chamadas HTTP passam por aqui — nenhum fetch espalhado nos componentes.
  * A URL base vem de variável de ambiente (VITE_API_URL), nunca hardcodada.
+ * O token de autenticação é injetado automaticamente quando o usuário está logado.
  */
 
 import type {
@@ -16,6 +17,7 @@ import type {
   GenerateListPayload,
   GenerateListResult,
 } from '../types'
+import { getAccessToken } from '../lib/supabase'
 
 const BASE_URL = import.meta.env.VITE_API_URL as string
 
@@ -40,9 +42,15 @@ async function request<T>(
   path: string,
   body?: unknown,
 ): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+
+  // Injeta token de auth quando disponível
+  const token = await getAccessToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 
@@ -60,29 +68,35 @@ async function request<T>(
 // ── Listas ────────────────────────────────────────────────────────────────────
 
 export const listApi = {
-  /** Busca lista + itens pelo edit_token ou view_token */
   get: (token: string) =>
     request<ListData>('GET', `/lists/${token}`),
 
-  /** Cria uma nova lista vazia */
   create: (payload?: CreateListPayload) =>
     request<Pick<ListData, 'id' | 'title' | 'edit_token' | 'view_token' | 'created_at'>>(
-      'POST',
-      '/lists',
-      payload ?? {},
+      'POST', '/lists', payload ?? {},
     ),
 
-  /** Atualiza título ou config da lista (requer edit_token) */
   update: (token: string, payload: UpdateListPayload) =>
     request<{ ok: boolean }>('PATCH', `/lists/${token}`, payload),
 
-  /** Gera links de compartilhamento (requer edit_token) */
   share: (token: string) =>
     request<ShareLinks>('GET', `/lists/${token}/share`),
 
-  /** Gera lista personalizada via IA */
   generate: (payload: GenerateListPayload) =>
     request<GenerateListResult>('POST', '/lists/generate', payload),
+}
+
+// ── Itens ─────────────────────────────────────────────────────────────────────
+
+export const itemApi = {
+  create: (token: string, payload: CreateItemPayload) =>
+    request<Item>('POST', `/lists/${token}/items`, payload),
+
+  update: (token: string, itemId: string, payload: UpdateItemPayload) =>
+    request<Item>('PATCH', `/lists/${token}/items/${itemId}`, payload),
+
+  remove: (token: string, itemId: string) =>
+    request<{ ok: boolean; deleted: string }>('DELETE', `/lists/${token}/items/${itemId}`),
 }
 
 // ── Sugestão de item ──────────────────────────────────────────────────────────
@@ -100,18 +114,22 @@ export const suggestApi = {
     request<SuggestItemResult>('POST', '/items/suggest', { nome, amb, cat }),
 }
 
-// ── Itens ─────────────────────────────────────────────────────────────────────
+// ── Usuário autenticado ───────────────────────────────────────────────────────
 
-export const itemApi = {
-  /** Adiciona um item à lista (requer edit_token) */
-  create: (token: string, payload: CreateItemPayload) =>
-    request<Item>('POST', `/lists/${token}/items`, payload),
+export interface UserList {
+  id: string
+  title: string
+  edit_token: string
+  view_token?: string
+  created_at: string
+  items_count: number
+  items_bought: number
+}
 
-  /** Atualiza campos de um item (requer edit_token) */
-  update: (token: string, itemId: string, payload: UpdateItemPayload) =>
-    request<Item>('PATCH', `/lists/${token}/items/${itemId}`, payload),
+export const userApi = {
+  getLists: () =>
+    request<UserList[]>('GET', '/me/lists'),
 
-  /** Remove um item (requer edit_token) */
-  remove: (token: string, itemId: string) =>
-    request<{ ok: boolean; deleted: string }>('DELETE', `/lists/${token}/items/${itemId}`),
+  claimList: (token: string) =>
+    request<{ ok: boolean; list_id: string }>('POST', '/me/lists/claim', { token }),
 }
