@@ -11,32 +11,36 @@ import { useListStore } from '../store/useListStore'
 import { userApi, type UserList } from '../services/api'
 
 interface Props {
-  onCreateNew: () => void   // navega para o fluxo de geração de lista
+  onCreateNew: () => void
 }
 
 type PageSize = 10 | 25 | 50 | 100
+
+const ACCENT_ACTIVE    = 'linear-gradient(180deg, #3B82F6 0%, #6366F1 100%)'
+const ACCENT_DONE      = '#10B981'
 
 // ── Barra de progresso ────────────────────────────────────────────────────────
 
 function ProgressBar({ value, total }: { value: number; total: number }) {
   const pct = total === 0 ? 0 : Math.round((value / total) * 100)
   return (
-    <div className="w-full h-1.5 bg-bg rounded-full overflow-hidden">
+    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
       <div
-        className="h-full rounded-full transition-all"
+        className="h-full rounded-full transition-all duration-500"
         style={{
           width: `${pct}%`,
-          background: pct === 100 ? '#10B981' : 'linear-gradient(90deg, #3B82F6, #6366F1)',
+          background: pct === 100 ? ACCENT_DONE : 'linear-gradient(90deg, #3B82F6, #6366F1)',
         }}
       />
     </div>
   )
 }
 
-// ── Card de lista (mobile) / Row (desktop) ────────────────────────────────────
+// ── Card de lista ─────────────────────────────────────────────────────────────
 
-function ListRow({ list, onOpen }: { list: UserList; onOpen: () => void }) {
-  const pct = list.items_count === 0 ? 0 : Math.round((list.items_bought / list.items_count) * 100)
+function ListCard({ list, onOpen }: { list: UserList; onOpen: () => void }) {
+  const pct  = list.items_count === 0 ? 0 : Math.round((list.items_bought / list.items_count) * 100)
+  const done = pct === 100
   const date = new Date(list.created_at).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'short', year: 'numeric',
   })
@@ -44,90 +48,107 @@ function ListRow({ list, onOpen }: { list: UserList; onOpen: () => void }) {
   return (
     <button
       onClick={onOpen}
-      className="w-full text-left bg-white rounded-2xl border border-border p-4 shadow-card hover:border-wm-blue hover:shadow-btn transition-all group"
+      className="w-full text-left bg-white rounded-2xl border border-border overflow-hidden shadow-card hover:shadow-btn hover:border-wm-blue/40 transition-all group flex"
     >
-      {/* Mobile layout */}
-      <div className="flex items-start justify-between gap-3 mb-2 md:hidden">
-        <div className="min-w-0">
-          <p className="font-display font-bold text-ink text-sm leading-snug truncate group-hover:text-wm-blue transition-colors">
-            {list.title || 'Lista sem título'}
-          </p>
-          <p className="text-xs text-ink-3 mt-0.5">{date}</p>
-        </div>
-        <StatusBadge pct={pct} />
-      </div>
-      <div className="md:hidden">
-        <ProgressBar value={list.items_bought} total={list.items_count} />
-        <p className="text-xs text-ink-3 mt-1.5">
-          {list.items_bought} de {list.items_count} {list.items_count === 1 ? 'item' : 'itens'} comprados
-        </p>
-      </div>
+      {/* Borda lateral colorida */}
+      <div
+        className="w-1 flex-shrink-0 transition-all"
+        style={{ background: done ? ACCENT_DONE : ACCENT_ACTIVE }}
+      />
 
-      {/* Desktop layout — row estilo tabela */}
-      <div className="hidden md:flex items-center gap-4">
-        <div className="flex-1 min-w-0">
-          <p className="font-display font-semibold text-ink text-sm truncate group-hover:text-wm-blue transition-colors">
-            {list.title || 'Lista sem título'}
-          </p>
-        </div>
-        <p className="text-xs text-ink-3 whitespace-nowrap w-28 text-right">{date}</p>
-        <div className="w-32">
+      <div className="flex-1 p-4 min-w-0">
+        {/* Mobile */}
+        <div className="md:hidden">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="min-w-0">
+              <p className="font-display font-bold text-ink text-sm leading-snug truncate group-hover:text-wm-blue transition-colors">
+                {list.title || 'Lista sem título'}
+              </p>
+              <p className="text-xs text-ink-3 mt-0.5">{date}</p>
+            </div>
+            <StatusBadge pct={pct} />
+          </div>
           <ProgressBar value={list.items_bought} total={list.items_count} />
-          <p className="text-[11px] text-ink-3 mt-1">
-            {list.items_bought}/{list.items_count} itens
+          <p className="text-xs text-ink-3 mt-1.5">
+            {list.items_bought} de {list.items_count} {list.items_count === 1 ? 'item' : 'itens'} comprados
           </p>
         </div>
-        <StatusBadge pct={pct} />
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-ink-3 group-hover:text-wm-blue transition-colors flex-shrink-0">
-          <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
+
+        {/* Desktop */}
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="font-display font-semibold text-ink text-sm truncate group-hover:text-wm-blue transition-colors">
+              {list.title || 'Lista sem título'}
+            </p>
+            <p className="text-[11px] text-ink-3 mt-0.5">{date}</p>
+          </div>
+          <div className="w-36 flex-shrink-0">
+            <ProgressBar value={list.items_bought} total={list.items_count} />
+            <p className="text-[11px] text-ink-3 mt-1">
+              {list.items_bought}/{list.items_count} itens
+            </p>
+          </div>
+          <StatusBadge pct={pct} />
+          <svg
+            width="14" height="14" viewBox="0 0 24 24" fill="none"
+            className="text-ink-3 group-hover:text-wm-blue transition-colors flex-shrink-0"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
       </div>
     </button>
   )
 }
 
 function StatusBadge({ pct }: { pct: number }) {
+  if (pct === 100) {
+    return (
+      <span className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Concluída
+      </span>
+    )
+  }
+  if (pct === 0) {
+    return (
+      <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap">
+        Não iniciada
+      </span>
+    )
+  }
   return (
-    <span className={[
-      'flex-shrink-0 text-xs font-semibold px-2 py-1 rounded-full border',
-      pct === 100
-        ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-        : 'bg-blue-50 text-wm-blue border-blue-200',
-    ].join(' ')}>
-      {pct === 100 ? '✓ Concluída' : `${pct}%`}
+    <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border"
+      style={{ background: 'linear-gradient(135deg,#EFF6FF,#EDE9FE)', color: '#4F46E5', borderColor: '#C7D2FE' }}>
+      {pct}% concluído
     </span>
   )
 }
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-function EmptyState({
-  onCreateNew,
-  onLinkList,
-}: {
-  onCreateNew: () => void
-  onLinkList: () => void
-}) {
+function EmptyState({ onCreateNew, onLinkList }: { onCreateNew: () => void; onLinkList: () => void }) {
   return (
-    <div className="py-8">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-bg border border-border flex items-center justify-center mx-auto mb-4">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="5" width="18" height="16" rx="2" stroke="#94A3B8" strokeWidth="1.8"/>
-            <path d="M7 10h10M7 14h6" stroke="#94A3B8" strokeWidth="1.8" strokeLinecap="round"/>
-          </svg>
-        </div>
-        <p className="font-display font-bold text-ink text-base mb-1">Nenhuma lista ainda</p>
-        <p className="text-sm text-ink-2 max-w-xs mx-auto">
-          Crie uma nova lista com IA ou vincule uma lista que você já tem.
-        </p>
+    <div className="py-10 text-center">
+      <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg,#EFF6FF,#EDE9FE)' }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="5" width="18" height="16" rx="2" stroke="#6366F1" strokeWidth="1.8"/>
+          <path d="M7 10h10M7 14h6" stroke="#6366F1" strokeWidth="1.8" strokeLinecap="round"/>
+          <path d="M8 2v4M16 2v4" stroke="#3B82F6" strokeWidth="1.8" strokeLinecap="round"/>
+        </svg>
       </div>
+      <p className="font-display font-bold text-ink text-base mb-1">Nenhuma lista ainda</p>
+      <p className="text-sm text-ink-2 max-w-xs mx-auto mb-8">
+        Crie uma nova lista com IA ou vincule uma lista que você já tem.
+      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
-        {/* Criar nova */}
         <button
           onClick={onCreateNew}
-          className="flex flex-col items-start gap-3 p-5 rounded-2xl gradient-bg shadow-btn hover:opacity-95 hover:scale-[1.02] transition-all text-left"
+          className="flex flex-col items-start gap-3 p-5 rounded-2xl gradient-bg shadow-btn hover:opacity-95 hover:scale-[1.01] transition-all text-left"
         >
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -137,11 +158,10 @@ function EmptyState({
           </div>
           <div>
             <p className="text-white font-display font-bold text-sm">Criar com IA</p>
-            <p className="text-white/80 text-xs mt-0.5">Conte sobre seu imóvel e gere uma lista personalizada</p>
+            <p className="text-white/80 text-xs mt-0.5 leading-relaxed">Conte sobre seu imóvel e gere uma lista personalizada</p>
           </div>
         </button>
 
-        {/* Vincular existente */}
         <button
           onClick={onLinkList}
           className="flex flex-col items-start gap-3 p-5 rounded-2xl border-2 border-border bg-white shadow-card hover:border-wm-blue hover:shadow-btn transition-all text-left"
@@ -154,7 +174,7 @@ function EmptyState({
           </div>
           <div>
             <p className="text-ink font-display font-bold text-sm">Vincular lista</p>
-            <p className="text-ink-2 text-xs mt-0.5">Adicione uma lista existente à sua conta</p>
+            <p className="text-ink-2 text-xs mt-0.5 leading-relaxed">Adicione uma lista existente à sua conta</p>
           </div>
         </button>
       </div>
@@ -162,7 +182,7 @@ function EmptyState({
   )
 }
 
-// ── Link form inline ──────────────────────────────────────────────────────────
+// ── Link form ─────────────────────────────────────────────────────────────────
 
 function LinkForm({ onLinked, onCancel }: { onLinked: () => void; onCancel: () => void }) {
   const [token,   setToken]   = useState('')
@@ -222,26 +242,16 @@ function LinkForm({ onLinked, onCancel }: { onLinked: () => void; onCancel: () =
 // ── Paginação ─────────────────────────────────────────────────────────────────
 
 function Pagination({
-  page,
-  totalPages,
-  pageSize,
-  total,
-  onPage,
-  onPageSize,
+  page, totalPages, pageSize, total, onPage, onPageSize,
 }: {
-  page: number
-  totalPages: number
-  pageSize: PageSize
-  total: number
-  onPage: (p: number) => void
-  onPageSize: (s: PageSize) => void
+  page: number; totalPages: number; pageSize: PageSize
+  total: number; onPage: (p: number) => void; onPageSize: (s: PageSize) => void
 }) {
   if (total === 0) return null
-
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-border">
       <div className="flex items-center gap-2 text-xs text-ink-2">
-        <span>Itens por página:</span>
+        <span>Por página:</span>
         {([10, 25, 50, 100] as PageSize[]).map((s) => (
           <button
             key={s}
@@ -257,14 +267,12 @@ function Pagination({
           </button>
         ))}
       </div>
-
       <div className="flex items-center gap-2">
         <span className="text-xs text-ink-2">
           {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} de {total}
         </span>
         <button
-          onClick={() => onPage(page - 1)}
-          disabled={page === 1}
+          onClick={() => onPage(page - 1)} disabled={page === 1}
           className="w-8 h-8 rounded-xl border border-border flex items-center justify-center text-ink-2 hover:border-wm-blue hover:text-wm-blue disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -272,8 +280,7 @@ function Pagination({
           </svg>
         </button>
         <button
-          onClick={() => onPage(page + 1)}
-          disabled={page >= totalPages}
+          onClick={() => onPage(page + 1)} disabled={page >= totalPages}
           className="w-8 h-8 rounded-xl border border-border flex items-center justify-center text-ink-2 hover:border-wm-blue hover:text-wm-blue disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -297,10 +304,8 @@ export function UserAreaPage({ onCreateNew }: Props) {
   const [showLinkForm, setShowLinkForm] = useState(false)
   const [linkSuccess,  setLinkSuccess]  = useState<string | null>(null)
   const [search,       setSearch]       = useState('')
-
-  // paginação
-  const [page,     setPage]     = useState(1)
-  const [pageSize, setPageSize] = useState<PageSize>(10)
+  const [page,         setPage]         = useState(1)
+  const [pageSize,     setPageSize]     = useState<PageSize>(10)
 
   useEffect(() => { fetchLists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -324,36 +329,40 @@ export function UserAreaPage({ onCreateNew }: Props) {
     setTimeout(() => setLinkSuccess(null), 4000)
   }
 
-  // Busca por nome (partial match, case-insensitive)
-  const filteredLists = search.trim()
-    ? lists.filter((l) =>
-        (l.title || '').toLowerCase().includes(search.trim().toLowerCase())
-      )
+  const filteredLists  = search.trim()
+    ? lists.filter((l) => (l.title || '').toLowerCase().includes(search.trim().toLowerCase()))
     : lists
-
   const totalPages     = Math.max(1, Math.ceil(filteredLists.length / pageSize))
   const paginatedLists = filteredLists.slice((page - 1) * pageSize, page * pageSize)
 
-  const email = user?.email ?? ''
+  const email        = user?.email ?? ''
+  const totalCount   = lists.length
+  const doneCount    = lists.filter((l) => l.items_count > 0 && l.items_bought === l.items_count).length
+  const activeCount  = totalCount - doneCount
 
   return (
     <div className="w-full max-w-3xl mx-auto">
 
-      {/* Cabeçalho da seção */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
+      {/* ── Hero header ──────────────────────────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-5 mb-6 border border-blue-100"
+        style={{ background: 'linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 60%, #EDE9FE 100%)' }}
+      >
+        {/* Linha superior: título + ações */}
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-display font-bold text-ink text-lg">Minhas listas</h2>
-            <p className="text-xs text-ink-2 mt-0.5 truncate max-w-[200px]">{email}</p>
+            <h2 className="font-display font-bold text-2xl gradient-text leading-tight">
+              Minhas listas
+            </h2>
+            <p className="text-xs text-ink-3 mt-0.5 truncate max-w-[220px]">{email}</p>
           </div>
 
-          {/* Ações */}
+          {/* Botões de ação */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Botão vincular lista */}
             {!showLinkForm && (
               <button
                 onClick={() => setShowLinkForm(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue transition-all"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-white border border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue shadow-card transition-all"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -362,8 +371,6 @@ export function UserAreaPage({ onCreateNew }: Props) {
                 <span className="hidden sm:inline">Vincular</span>
               </button>
             )}
-
-            {/* Botão nova lista */}
             <button
               onClick={onCreateNew}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 transition-all"
@@ -377,11 +384,38 @@ export function UserAreaPage({ onCreateNew }: Props) {
           </div>
         </div>
 
-        {/* Campo de busca */}
-        {lists.length > 0 && (
-          <div className="relative">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none">
+        {/* Pills de stats — só quando há listas */}
+        {totalCount > 0 && (
+          <div className="flex gap-2 flex-wrap mt-4">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/80 border border-blue-200 text-wm-blue">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+                <path d="M7 10h10M7 14h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              {totalCount} {totalCount === 1 ? 'lista' : 'listas'}
+            </span>
+            {doneCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/80 border border-emerald-200 text-emerald-600">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                {doneCount} concluída{doneCount !== 1 ? 's' : ''}
+              </span>
+            )}
+            {activeCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/80 border border-indigo-200 text-indigo-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block" />
+                {activeCount} em andamento
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Barra de busca */}
+        {totalCount > 0 && (
+          <div className="relative mt-3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.8"/>
               <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
@@ -390,14 +424,14 @@ export function UserAreaPage({ onCreateNew }: Props) {
               placeholder="Buscar pelo nome da mudança..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl text-sm text-ink bg-white placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
+              className="w-full pl-9 pr-9 py-2.5 bg-white/80 border border-blue-100 rounded-xl text-sm text-ink placeholder-ink-3 outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
             />
             {search && (
               <button
                 onClick={() => { setSearch(''); setPage(1) }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink transition-colors"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </button>
@@ -406,24 +440,21 @@ export function UserAreaPage({ onCreateNew }: Props) {
         )}
       </div>
 
-      {/* Feedback de vínculo */}
+      {/* ── Feedback de vínculo ───────────────────────────────────────────────── */}
       {linkSuccess && (
         <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-700">
           ✓ {linkSuccess}
         </div>
       )}
 
-      {/* Formulário de vínculo inline */}
+      {/* ── Formulário de vínculo ─────────────────────────────────────────────── */}
       {showLinkForm && (
         <div className="mb-4">
-          <LinkForm
-            onLinked={handleLinked}
-            onCancel={() => { setShowLinkForm(false) }}
-          />
+          <LinkForm onLinked={handleLinked} onCancel={() => setShowLinkForm(false)} />
         </div>
       )}
 
-      {/* Estados de loading / erro */}
+      {/* ── Conteúdo principal ────────────────────────────────────────────────── */}
       {listsLoading ? (
         <div className="flex flex-col items-center gap-3 py-16 text-ink-3">
           <div className="w-6 h-6 border-2 border-border border-t-wm-blue rounded-full animate-spin" />
@@ -437,32 +468,33 @@ export function UserAreaPage({ onCreateNew }: Props) {
           </button>
         </div>
       ) : lists.length === 0 ? (
-        <EmptyState
-          onCreateNew={onCreateNew}
-          onLinkList={() => setShowLinkForm(true)}
-        />
+        <EmptyState onCreateNew={onCreateNew} onLinkList={() => setShowLinkForm(true)} />
       ) : filteredLists.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-ink-2 text-sm">Nenhuma lista encontrada para <strong>"{search}"</strong></p>
+          <p className="text-ink-2 text-sm">
+            Nenhuma lista encontrada para <strong>"{search}"</strong>
+          </p>
           <button onClick={() => setSearch('')} className="mt-2 text-xs text-wm-blue underline">
             Limpar busca
           </button>
         </div>
       ) : (
         <>
-          {/* Desktop: cabeçalho de colunas */}
-          <div className="hidden md:flex items-center gap-4 px-4 pb-2 text-xs font-bold uppercase tracking-wider text-ink-3">
+          {/* Cabeçalho de colunas — desktop */}
+          <div
+            className="hidden md:flex items-center gap-4 px-5 py-2 rounded-xl mb-1 text-xs font-bold uppercase tracking-wider text-indigo-500"
+            style={{ background: 'linear-gradient(90deg,#EFF6FF,#EDE9FE)' }}
+          >
             <span className="flex-1">Lista</span>
-            <span className="w-28 text-right">Data</span>
-            <span className="w-32">Progresso</span>
-            <span className="w-20 text-center">Status</span>
-            <span className="w-5" />
+            <span className="w-36">Progresso</span>
+            <span className="w-28 text-center">Status</span>
+            <span className="w-4" />
           </div>
 
-          {/* Lista de cards */}
+          {/* Cards */}
           <div className="space-y-2">
             {paginatedLists.map((list) => (
-              <ListRow
+              <ListCard
                 key={list.id}
                 list={list}
                 onOpen={() => setTokenAndInit(list.edit_token)}
@@ -476,8 +508,8 @@ export function UserAreaPage({ onCreateNew }: Props) {
             totalPages={totalPages}
             pageSize={pageSize}
             total={filteredLists.length}
-            onPage={(p) => setPage(p)}
-            onPageSize={(s) => setPageSize(s)}
+            onPage={setPage}
+            onPageSize={setPageSize}
           />
         </>
       )}
