@@ -4,6 +4,7 @@ import { useListStore } from '../store/useListStore'
 
 interface Props {
   item: Item
+  onDetail: (item: Item) => void
   onEdit: (item: Item) => void
   onBuy: (item: Item) => void
   onRemove: (item: Item) => void
@@ -15,7 +16,7 @@ const PRI_BADGE: Record<string, string> = {
   Baixa: 'bg-emerald-50 text-emerald-600 border-emerald-200',
 }
 
-export function ItemRow({ item, onEdit, onBuy, onRemove }: Props) {
+export function ItemRow({ item, onDetail, onEdit, onBuy, onRemove }: Props) {
   const unmarkBought = useListStore((s) => s.unmarkBought)
   const permission   = useListStore((s) => s.permission)
   const isEdit = permission === 'edit'
@@ -29,11 +30,10 @@ export function ItemRow({ item, onEdit, onBuy, onRemove }: Props) {
 
   return (
     <div
-      onClick={() => isEdit && onEdit(item)}
+      onClick={() => onDetail(item)}
       className={[
-        'bg-white rounded-2xl card-shadow border border-border p-4 transition-all',
+        'bg-white rounded-2xl card-shadow border border-border p-4 transition-all cursor-pointer active:scale-[0.99]',
         item.comprado ? 'opacity-60' : 'hover:border-wm-blue/30 hover:shadow-btn',
-        isEdit ? 'cursor-pointer active:scale-[0.99]' : 'cursor-default',
       ].join(' ')}
     >
       <div className="flex items-start gap-3">

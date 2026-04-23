@@ -2,13 +2,13 @@
  * UserAreaPage — área logada do usuário.
  *
  * Exibe todas as listas associadas à conta com paginação,
- * permite abrir, vincular e criar novas listas.
+ * permite abrir, vincular, criar, renomear e excluir listas.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useListStore } from '../store/useListStore'
-import { userApi, type UserList } from '../services/api'
+import { listApi, userApi, type UserList } from '../services/api'
 
 interface Props {
   onCreateNew: () => void
@@ -16,8 +16,8 @@ interface Props {
 
 type PageSize = 10 | 25 | 50 | 100
 
-const ACCENT_ACTIVE    = 'linear-gradient(180deg, #3B82F6 0%, #6366F1 100%)'
-const ACCENT_DONE      = '#10B981'
+const ACCENT_ACTIVE = 'linear-gradient(180deg, #3B82F6 0%, #6366F1 100%)'
+const ACCENT_DONE   = '#10B981'
 
 // ── Barra de progresso ────────────────────────────────────────────────────────
 
@@ -36,9 +36,113 @@ function ProgressBar({ value, total }: { value: number; total: number }) {
   )
 }
 
+// ── Status badge ──────────────────────────────────────────────────────────────
+
+function StatusBadge({ pct }: { pct: number }) {
+  if (pct === 100) {
+    return (
+      <span className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Concluída
+      </span>
+    )
+  }
+  if (pct === 0) {
+    return (
+      <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap">
+        Não iniciada
+      </span>
+    )
+  }
+  return (
+    <span
+      className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border"
+      style={{ background: 'linear-gradient(135deg,#EFF6FF,#EDE9FE)', color: '#4F46E5', borderColor: '#C7D2FE' }}
+    >
+      {pct}% concluído
+    </span>
+  )
+}
+
+// ── Menu de ações de card ─────────────────────────────────────────────────────
+
+interface CardActionsProps {
+  onRename: () => void
+  onDelete: () => void
+}
+
+function CardActions({ onRename, onDelete }: CardActionsProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Fecha ao clicar fora
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0 self-center">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
+        className="w-8 h-8 flex items-center justify-center rounded-xl text-ink-3 hover:text-ink hover:bg-slate-100 transition-all"
+        title="Opções"
+        aria-label="Opções da lista"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="5"  r="1.5"/>
+          <circle cx="12" cy="12" r="1.5"/>
+          <circle cx="12" cy="19" r="1.5"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-9 z-30 bg-white rounded-xl border border-border shadow-modal w-40 py-1 animate-fade-in">
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(false); onRename() }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-bg transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Renomear
+          </button>
+          <div className="h-px bg-border mx-2 my-1" />
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(false); onDelete() }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <line x1="10" y1="11" x2="10" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            Excluir lista
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Card de lista ─────────────────────────────────────────────────────────────
 
-function ListCard({ list, onOpen }: { list: UserList; onOpen: () => void }) {
+interface ListCardProps {
+  list: UserList
+  onOpen: () => void
+  onRename: () => void
+  onDelete: () => void
+}
+
+function ListCard({ list, onOpen, onRename, onDelete }: ListCardProps) {
   const pct  = list.items_count === 0 ? 0 : Math.round((list.items_bought / list.items_count) * 100)
   const done = pct === 100
   const date = new Date(list.created_at).toLocaleDateString('pt-BR', {
@@ -46,17 +150,18 @@ function ListCard({ list, onOpen }: { list: UserList; onOpen: () => void }) {
   })
 
   return (
-    <button
-      onClick={onOpen}
-      className="w-full text-left bg-white rounded-2xl border border-border overflow-hidden shadow-card hover:shadow-btn hover:border-wm-blue/40 transition-all group flex"
-    >
+    <div className="w-full bg-white rounded-2xl border border-border overflow-hidden shadow-card hover:shadow-btn hover:border-wm-blue/40 transition-all group flex">
       {/* Borda lateral colorida */}
       <div
         className="w-1 flex-shrink-0 transition-all"
         style={{ background: done ? ACCENT_DONE : ACCENT_ACTIVE }}
       />
 
-      <div className="flex-1 p-4 min-w-0">
+      {/* Área clicável principal */}
+      <button
+        onClick={onOpen}
+        className="flex-1 p-4 min-w-0 text-left"
+      >
         {/* Mobile */}
         <div className="md:hidden">
           <div className="flex items-start justify-between gap-2 mb-3">
@@ -96,34 +201,155 @@ function ListCard({ list, onOpen }: { list: UserList; onOpen: () => void }) {
             <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </div>
+      </button>
+
+      {/* Ações (renomear / excluir) */}
+      <div className="flex items-center pr-2">
+        <CardActions onRename={onRename} onDelete={onDelete} />
       </div>
-    </button>
+    </div>
   )
 }
 
-function StatusBadge({ pct }: { pct: number }) {
-  if (pct === 100) {
-    return (
-      <span className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        Concluída
-      </span>
-    )
+// ── Modal de renomear ─────────────────────────────────────────────────────────
+
+interface RenameModalProps {
+  list: UserList
+  onSave: (newTitle: string) => Promise<void>
+  onCancel: () => void
+}
+
+function RenameModal({ list, onSave, onCancel }: RenameModalProps) {
+  const [title,   setTitle]   = useState(list.title || '')
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select() }, [])
+
+  async function handleSave() {
+    const t = title.trim()
+    if (!t) { setError('O nome não pode ficar vazio.'); return }
+    setError(null)
+    setLoading(true)
+    try {
+      await onSave(t)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao renomear')
+      setLoading(false)
+    }
   }
-  if (pct === 0) {
-    return (
-      <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap">
-        Não iniciada
-      </span>
-    )
-  }
+
   return (
-    <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border"
-      style={{ background: 'linear-gradient(135deg,#EFF6FF,#EDE9FE)', color: '#4F46E5', borderColor: '#C7D2FE' }}>
-      {pct}% concluído
-    </span>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-ink/30 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-modal animate-fade-in">
+        <h3 className="font-display text-lg font-bold text-ink mb-1">Renomear lista</h3>
+        <p className="text-xs text-ink-3 mb-4">Escolha um novo nome para identificar esta mudança.</p>
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={title}
+          onChange={(e) => { setTitle(e.target.value); setError(null) }}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onCancel() }}
+          maxLength={200}
+          className="w-full px-3 py-2.5 border border-border rounded-xl text-sm text-ink bg-bg outline-none focus:border-wm-blue focus:ring-2 focus:ring-wm-blue/10 transition-all"
+          placeholder="Nome da lista..."
+        />
+        {error && <p className="text-xs text-red-600 mt-1.5">⚠️ {error}</p>}
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border text-ink-2 hover:bg-bg-2 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading || !title.trim() || title.trim() === (list.title || '')}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {loading ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal de confirmação de exclusão ──────────────────────────────────────────
+
+interface DeleteModalProps {
+  list: UserList
+  onConfirm: () => Promise<void>
+  onCancel: () => void
+}
+
+function DeleteModal({ list, onConfirm, onCancel }: DeleteModalProps) {
+  const [loading,   setLoading]   = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
+
+  async function handleConfirm() {
+    setLoading(true)
+    try {
+      await onConfirm()
+    } catch {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-ink/30 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-modal animate-fade-in">
+        {/* Ícone de alerta */}
+        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round"/>
+            <line x1="12" y1="17" x2="12.01" y2="17" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
+
+        <h3 className="font-display text-lg font-bold text-ink mb-1">Excluir lista</h3>
+        <p className="text-sm text-ink-2 mb-1 leading-relaxed">
+          Tem certeza que deseja excluir{' '}
+          <strong className="text-ink">"{list.title || 'Lista sem título'}"</strong>?
+        </p>
+        <p className="text-sm text-red-600 font-medium mb-5">
+          Esta ação não pode ser desfeita. Todos os {list.items_count} itens serão perdidos.
+        </p>
+
+        {/* Checkbox de confirmação */}
+        <label className="flex items-center gap-2.5 cursor-pointer mb-5 group">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            className="w-4 h-4 rounded border-border accent-red-500 cursor-pointer"
+          />
+          <span className="text-sm text-ink-2 group-hover:text-ink transition-colors">
+            Entendo que esta ação é irreversível
+          </span>
+        </label>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border text-ink-2 hover:bg-bg-2 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={loading || !confirmed}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 transition-all"
+          >
+            {loading ? 'Excluindo...' : 'Excluir'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -292,6 +518,19 @@ function Pagination({
   )
 }
 
+// ── Toast simples local ───────────────────────────────────────────────────────
+
+function AreaToast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
+  return (
+    <div className={[
+      'fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-modal animate-fade-in',
+      type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white',
+    ].join(' ')}>
+      {msg}
+    </div>
+  )
+}
+
 // ── UserAreaPage ──────────────────────────────────────────────────────────────
 
 export function UserAreaPage({ onCreateNew }: Props) {
@@ -302,10 +541,20 @@ export function UserAreaPage({ onCreateNew }: Props) {
   const [listsLoading, setListsLoading] = useState(true)
   const [listsError,   setListsError]   = useState<string | null>(null)
   const [showLinkForm, setShowLinkForm] = useState(false)
-  const [linkSuccess,  setLinkSuccess]  = useState<string | null>(null)
   const [search,       setSearch]       = useState('')
   const [page,         setPage]         = useState(1)
   const [pageSize,     setPageSize]     = useState<PageSize>(10)
+
+  // Editar / excluir
+  const [renameTarget, setRenameTarget] = useState<UserList | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UserList | null>(null)
+
+  // Toast local (não usa o Toast do store)
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  function showToast(msg: string, type: 'success' | 'error' = 'success') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3500)
+  }
 
   useEffect(() => { fetchLists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -324,9 +573,31 @@ export function UserAreaPage({ onCreateNew }: Props) {
 
   async function handleLinked() {
     setShowLinkForm(false)
-    setLinkSuccess('Lista vinculada com sucesso!')
+    showToast('Lista vinculada com sucesso!')
     await fetchLists()
-    setTimeout(() => setLinkSuccess(null), 4000)
+  }
+
+  // ── Renomear ────────────────────────────────────────────────────────────────
+  async function handleRename(newTitle: string) {
+    if (!renameTarget) return
+    await listApi.rename(renameTarget.edit_token, newTitle)
+    // Atualização otimista
+    setLists((prev) => prev.map((l) => l.id === renameTarget.id ? { ...l, title: newTitle } : l))
+    setRenameTarget(null)
+    showToast('Lista renomeada!')
+  }
+
+  // ── Excluir ─────────────────────────────────────────────────────────────────
+  async function handleDelete() {
+    if (!deleteTarget) return
+    await listApi.delete(deleteTarget.edit_token)
+    setLists((prev) => prev.filter((l) => l.id !== deleteTarget.id))
+    setDeleteTarget(null)
+    showToast('Lista excluída.')
+    // Volta para página anterior se ficar sem itens na paginação atual
+    const remaining = filteredLists.length - 1
+    const newTotalPages = Math.max(1, Math.ceil(remaining / pageSize))
+    if (page > newTotalPages) setPage(newTotalPages)
   }
 
   const filteredLists  = search.trim()
@@ -335,10 +606,10 @@ export function UserAreaPage({ onCreateNew }: Props) {
   const totalPages     = Math.max(1, Math.ceil(filteredLists.length / pageSize))
   const paginatedLists = filteredLists.slice((page - 1) * pageSize, page * pageSize)
 
-  const email        = user?.email ?? ''
-  const totalCount   = lists.length
-  const doneCount    = lists.filter((l) => l.items_count > 0 && l.items_bought === l.items_count).length
-  const activeCount  = totalCount - doneCount
+  const email       = user?.email ?? ''
+  const totalCount  = lists.length
+  const doneCount   = lists.filter((l) => l.items_count > 0 && l.items_bought === l.items_count).length
+  const activeCount = totalCount - doneCount
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -440,13 +711,6 @@ export function UserAreaPage({ onCreateNew }: Props) {
         )}
       </div>
 
-      {/* ── Feedback de vínculo ───────────────────────────────────────────────── */}
-      {linkSuccess && (
-        <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-700">
-          ✓ {linkSuccess}
-        </div>
-      )}
-
       {/* ── Formulário de vínculo ─────────────────────────────────────────────── */}
       {showLinkForm && (
         <div className="mb-4">
@@ -488,7 +752,7 @@ export function UserAreaPage({ onCreateNew }: Props) {
             <span className="flex-1">Lista</span>
             <span className="w-36">Progresso</span>
             <span className="w-28 text-center">Status</span>
-            <span className="w-4" />
+            <span className="w-14" />
           </div>
 
           {/* Cards */}
@@ -498,6 +762,8 @@ export function UserAreaPage({ onCreateNew }: Props) {
                 key={list.id}
                 list={list}
                 onOpen={() => setTokenAndInit(list.edit_token)}
+                onRename={() => setRenameTarget(list)}
+                onDelete={() => setDeleteTarget(list)}
               />
             ))}
           </div>
@@ -513,6 +779,26 @@ export function UserAreaPage({ onCreateNew }: Props) {
           />
         </>
       )}
+
+      {/* ── Modais ───────────────────────────────────────────────────────────── */}
+      {renameTarget && (
+        <RenameModal
+          list={renameTarget}
+          onSave={handleRename}
+          onCancel={() => setRenameTarget(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteModal
+          list={deleteTarget}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {/* ── Toast local ───────────────────────────────────────────────────────── */}
+      {toast && <AreaToast msg={toast.msg} type={toast.type} />}
     </div>
   )
 }

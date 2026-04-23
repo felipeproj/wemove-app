@@ -79,6 +79,12 @@ export const listApi = {
   update: (token: string, payload: UpdateListPayload) =>
     request<{ ok: boolean }>('PATCH', `/lists/${token}`, payload),
 
+  rename: (token: string, title: string) =>
+    request<{ ok: boolean }>('PATCH', `/lists/${token}`, { title }),
+
+  delete: (token: string) =>
+    request<{ ok: boolean }>('DELETE', `/lists/${token}`),
+
   share: (token: string) =>
     request<ShareLinks>('GET', `/lists/${token}/share`),
 
@@ -112,6 +118,29 @@ export interface SuggestItemResult {
 export const suggestApi = {
   suggest: (nome: string, amb: string, cat: string) =>
     request<SuggestItemResult>('POST', '/items/suggest', { nome, amb, cat }),
+}
+
+// ── Recomendações de compra ───────────────────────────────────────────────────
+
+export interface RecommendedItem {
+  nome:          string
+  descricao:     string
+  loja:          string
+  preco:         number
+  avaliacao:     number
+  pontos_fortes: string[]
+  pontos_fracos: string[]
+  badge:         'melhor_custo_beneficio' | 'mais_barato' | 'mais_caro' | null
+  link:          string
+}
+
+export interface RecommendResult {
+  itens: RecommendedItem[]
+}
+
+export const recommendApi = {
+  get: (nome: string, amb: string, cat: string, preco_min: number, preco_max: number) =>
+    request<RecommendResult>('POST', '/items/recommend', { nome, amb, cat, preco_min, preco_max }),
 }
 
 // ── Usuário autenticado ───────────────────────────────────────────────────────
