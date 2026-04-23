@@ -1,9 +1,11 @@
 /**
  * ItemDetailModal — modal de detalhes do item com duas abas:
  *  - "Detalhes"        → informações do item + ações (editar/comprar/remover)
- *  - "Recomendações"   → sugestões de compra com imagens, curadoria e comparação
+ *  - "Recomendações"   → sugestões de compra com curadoria e comparação
  *
- * Em desktop (md+) o modal ocupa 70vw para melhor aproveitamento do espaço.
+ * No desktop (md+) o modal muda de tamanho conforme a aba ativa:
+ *   Detalhes      → compacto (max-w-lg)
+ *   Recomendações → 80vw (max-w-6xl)
  */
 
 import { useEffect, useState } from 'react'
@@ -95,35 +97,6 @@ function LojaChip({ loja }: { loja: string }) {
   )
 }
 
-/** Imagem do produto via Picsum Photos (seed determinístico, HTTPS, CORS OK) */
-function ProductImage({ query }: { query: string }) {
-  const [errored, setErrored] = useState(false)
-  const seed = encodeURIComponent(query.trim().toLowerCase().replace(/\s+/g, '-') || 'product')
-  const src = `https://picsum.photos/seed/${seed}/320/200`
-
-  if (errored) {
-    return (
-      <div className="w-full h-36 flex items-center justify-center rounded-t-xl bg-gradient-to-br from-slate-100 to-slate-200">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-slate-400">
-          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-          <polyline points="21 15 16 10 5 21" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-        </svg>
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={src}
-      alt={query}
-      loading="lazy"
-      onError={() => setErrored(true)}
-      className="w-full h-36 object-cover rounded-t-xl bg-slate-100"
-    />
-  )
-}
-
 // ── Seção "Minha recomendação direta" ────────────────────────────────────────
 
 function HighlightSection({ recs }: { recs: RecommendedItem[] }) {
@@ -149,7 +122,14 @@ function HighlightSection({ recs }: { recs: RecommendedItem[] }) {
                 isCB ? 'border-indigo-300 shadow-btn' : 'border-border',
               ].join(' ')}
             >
-              <ProductImage query={rec.imagem_query} />
+              {/* Cabeçalho colorido em vez de imagem */}
+              <div
+                className="w-full h-10 flex items-center justify-center"
+                style={{ background: bs.bg, borderBottom: `1px solid ${bs.border}` }}
+              >
+                <span className="text-xl">{bs.icon}</span>
+              </div>
+
               <div className="p-3">
                 {/* Badge */}
                 <div
@@ -188,7 +168,7 @@ function HighlightSection({ recs }: { recs: RecommendedItem[] }) {
                       : 'border border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue',
                   ].join(' ')}
                 >
-                  Ver oferta →
+                  {isCB ? '🛒 Comprar agora' : `Ver na ${rec.loja} →`}
                 </a>
               </div>
             </div>
@@ -203,7 +183,8 @@ function HighlightSection({ recs }: { recs: RecommendedItem[] }) {
 
 function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
   const [selected,  setSelected]  = useState<number | null>(null)
-  const [tableOpen, setTableOpen] = useState(false)
+  // Tabela aberta por padrão
+  const [tableOpen, setTableOpen] = useState(true)
 
   const sorted = sortByBadge(recs)
 
@@ -229,7 +210,11 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
                   : 'border-border bg-white hover:border-wm-blue/40',
               ].join(' ')}
             >
-              <ProductImage query={rec.imagem_query} />
+              {/* Faixa de cor por badge no topo do card */}
+              <div
+                className="w-full h-2"
+                style={{ background: bs ? bs.bg : '#F1F5F9', borderBottom: `1px solid ${bs ? bs.border : '#E2E8F0'}` }}
+              />
               <div className="p-3">
                 {bs && (
                   <div
@@ -295,17 +280,17 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold gradient-bg text-white shadow-btn hover:opacity-90 transition-all"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <polyline points="15 3 21 3 21 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <line x1="10" y1="14" x2="21" y2="3" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="3" y1="6" x2="21" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M16 10a4 4 0 01-8 0" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Ver oferta na {rec.loja}
+              Quero comprar na {rec.loja}
             </a>
           </div>
         )
       })()}
 
-      {/* Botão comparar todos */}
+      {/* Botão ocultar/mostrar tabela */}
       <button
         onClick={() => setTableOpen((v) => !v)}
         className="w-full py-2.5 rounded-xl border border-border text-sm font-semibold text-ink-2 hover:border-wm-blue hover:text-wm-blue bg-white transition-all flex items-center justify-center gap-2 mt-3"
@@ -315,7 +300,7 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
           <rect x="9" y="7" width="6" height="14" rx="1" stroke="currentColor" strokeWidth="1.8"/>
           <rect x="16" y="11" width="6" height="10" rx="1" stroke="currentColor" strokeWidth="1.8"/>
         </svg>
-        {tableOpen ? 'Ocultar tabela completa' : 'Ver tabela de comparação completa'}
+        {tableOpen ? 'Ocultar tabela de comparação' : 'Ver tabela de comparação completa'}
       </button>
 
       {/* Tabela expandida */}
@@ -324,9 +309,9 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
           <table className="w-full text-xs border-collapse min-w-[480px]">
             <thead>
               <tr>
-                <th className="text-left text-[10px] font-bold uppercase tracking-wider text-ink-3 pb-2 pr-3 w-20 sticky left-0 bg-bg">Critério</th>
+                <th className="text-left text-[10px] font-bold uppercase tracking-wider text-ink-3 pb-2 pr-3 w-24 sticky left-0 bg-bg">Critério</th>
                 {sorted.map((rec, i) => (
-                  <th key={i} className="pb-2 px-2 text-center min-w-[110px]">
+                  <th key={i} className="pb-2 px-2 text-center min-w-[120px]">
                     <div className="text-[10px] font-bold text-ink leading-tight line-clamp-2">{rec.nome.split(' ').slice(0,4).join(' ')}</div>
                     <div className="font-display text-sm font-bold text-wm-blue mt-0.5">{fmt(rec.preco)}</div>
                     {rec.badge && (
@@ -343,7 +328,9 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
               <tr className="border-t border-border">
                 <td className="py-2 pr-3 text-ink-3 font-semibold sticky left-0 bg-bg">Avaliação</td>
                 {sorted.map((rec, i) => (
-                  <td key={i} className="py-2 px-2 text-center"><StarRating value={rec.avaliacao} /></td>
+                  <td key={i} className="py-2 px-2 text-center">
+                    <div className="flex justify-center"><StarRating value={rec.avaliacao} /></div>
+                  </td>
                 ))}
               </tr>
               <tr className="border-t border-border bg-bg/50">
@@ -355,8 +342,8 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
               <tr className="border-t border-border">
                 <td className="py-2 pr-3 text-ink-3 font-semibold align-top sticky left-0 bg-bg">Vantagens</td>
                 {sorted.map((rec, i) => (
-                  <td key={i} className="py-2 px-2 text-left align-top">
-                    <ul className="space-y-0.5">
+                  <td key={i} className="py-2 px-2 text-center align-top">
+                    <ul className="space-y-0.5 inline-block text-left">
                       {rec.pontos_fortes.map((p, j) => (
                         <li key={j} className="flex items-start gap-1 text-[10px]">
                           <span className="text-emerald-500 mt-px flex-shrink-0">✓</span>
@@ -370,8 +357,8 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
               <tr className="border-t border-border bg-bg/50">
                 <td className="py-2 pr-3 text-ink-3 font-semibold align-top sticky left-0 bg-bg-2">Desvantagens</td>
                 {sorted.map((rec, i) => (
-                  <td key={i} className="py-2 px-2 text-left align-top">
-                    <ul className="space-y-0.5">
+                  <td key={i} className="py-2 px-2 text-center align-top">
+                    <ul className="space-y-0.5 inline-block text-left">
                       {rec.pontos_fracos.map((p, j) => (
                         <li key={j} className="flex items-start gap-1 text-[10px]">
                           <span className="text-red-400 mt-px flex-shrink-0">−</span>
@@ -387,8 +374,13 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
                 {sorted.map((rec, i) => (
                   <td key={i} className="py-2 px-2 text-center">
                     <a href={rec.link} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold gradient-bg text-white shadow-btn hover:opacity-90 transition-all">
-                      Ver →
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold gradient-bg text-white shadow-btn hover:opacity-90 transition-all whitespace-nowrap">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <line x1="3" y1="6" x2="21" y2="6" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+                        <path d="M16 10a4 4 0 01-8 0" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+                      </svg>
+                      Comprar agora
                     </a>
                   </td>
                 ))}
@@ -576,17 +568,28 @@ export function ItemDetailModal({ item, onClose, onEdit, onBuy, onRemove }: Prop
     return () => setModalOpen(false)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /**
+   * Tamanho do modal conforme aba ativa:
+   *   Mobile  → sempre full width (w-full)
+   *   Desktop + Detalhes      → compacto (md:max-w-lg)
+   *   Desktop + Recomendações → largo (md:w-[80vw] md:max-w-6xl)
+   */
+  const modalSizeClass =
+    tab === 'recomendacoes'
+      ? 'w-full md:w-[80vw] md:max-w-6xl'
+      : 'w-full md:max-w-lg'
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-ink/30 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      {/*
-        Mobile:  100% width, bottom-sheet style
-        Desktop: 70vw, centralizado
-        max-h:   90vh com scroll interno
-      */}
-      <div className="bg-bg w-full md:w-[70vw] md:max-w-5xl rounded-2xl shadow-modal animate-fade-in flex flex-col max-h-[90vh]">
+      <div
+        className={[
+          'bg-bg rounded-2xl shadow-modal animate-fade-in flex flex-col max-h-[90vh] transition-all duration-300',
+          modalSizeClass,
+        ].join(' ')}
+      >
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex items-start gap-3 p-4 pb-0 flex-shrink-0">
