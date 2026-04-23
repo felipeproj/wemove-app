@@ -125,6 +125,7 @@ export const suggestApi = {
 export interface RecommendedItem {
   nome:          string
   descricao:     string
+  imagem_query:  string
   loja:          string
   preco:         number
   avaliacao:     number
