@@ -95,11 +95,11 @@ function LojaChip({ loja }: { loja: string }) {
   )
 }
 
-/** Imagem do produto via LoremFlickr (keyword-based, HTTPS, gratuito) */
+/** Imagem do produto via Picsum Photos (seed determinístico, HTTPS, CORS OK) */
 function ProductImage({ query }: { query: string }) {
   const [errored, setErrored] = useState(false)
-  const kw = encodeURIComponent(query.trim() || 'product')
-  const src = `https://loremflickr.com/320/200/${kw}/all`
+  const seed = encodeURIComponent(query.trim().toLowerCase().replace(/\s+/g, '-') || 'product')
+  const src = `https://picsum.photos/seed/${seed}/320/200`
 
   if (errored) {
     return (
