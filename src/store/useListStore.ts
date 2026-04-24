@@ -119,7 +119,10 @@ export const useListStore = create<ListStore>((set, get) => ({
   // Chamado pela GeneratePage após receber o token da IA
   setTokenAndInit: async (token: string) => {
     setTokenInUrl(token)
-    set({ needsSetup: false, loading: true, loadingMessage: 'Carregando sua lista...', error: null })
+    // Define permission como 'edit' imediatamente — esta função sempre é chamada
+    // com um edit_token (GeneratePage + UserAreaPage). O valor correto vem da API
+    // logo depois, mas isso evita que estado obsoleto de 'view' bloqueie os botões.
+    set({ needsSetup: false, loading: true, loadingMessage: 'Carregando sua lista...', error: null, permission: 'edit' })
     try {
       const data = await listApi.get(token)
       set({
@@ -204,6 +207,7 @@ export const useListStore = create<ListStore>((set, get) => ({
     set({
       needsSetup: true,
       token: null,
+      permission: 'edit',   // reset para evitar que 'view' vaze entre sessões
       items: [],
       listTitle: '',
       error: null,
