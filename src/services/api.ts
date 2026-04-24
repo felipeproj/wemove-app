@@ -144,6 +144,25 @@ export const recommendApi = {
     request<RecommendResult>('POST', '/items/recommend', { nome, amb, cat, preco_min, preco_max }),
 }
 
+// ── Histórico de compras ──────────────────────────────────────────────────────
+
+export interface ShoppingQuery {
+  id:         string
+  nome:       string
+  preco_min:  number | null
+  preco_max:  number | null
+  itens:      RecommendedItem[]
+  created_at: string
+}
+
+export const comprasApi = {
+  save: (nome: string, preco_min: number | null, preco_max: number | null, itens: RecommendedItem[]) =>
+    request<ShoppingQuery>('POST', '/me/compras', { nome, preco_min, preco_max, itens }),
+
+  list: () =>
+    request<ShoppingQuery[]>('GET', '/me/compras'),
+}
+
 // ── Usuário autenticado ───────────────────────────────────────────────────────
 
 export interface UserList {

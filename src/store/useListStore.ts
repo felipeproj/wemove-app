@@ -51,10 +51,11 @@ interface ListStore {
   goToLanding: () => void
   goToAuth: () => void
   goToUserArea: () => void
+  goToCompra: () => void
   modalOpen: boolean
   setModalOpen: (open: boolean) => void
-  pendingLandingView: 'auth' | 'user-area' | null
-  consumePendingView: () => 'auth' | 'user-area' | null
+  pendingLandingView: 'auth' | 'user-area' | 'compra' | null
+  consumePendingView: () => 'auth' | 'user-area' | 'compra' | null
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -220,6 +221,11 @@ export const useListStore = create<ListStore>((set, get) => ({
 
   goToUserArea: () => {
     set({ pendingLandingView: 'user-area' })
+    get().goToLanding()
+  },
+
+  goToCompra: () => {
+    set({ pendingLandingView: 'compra' })
     get().goToLanding()
   },
 }))

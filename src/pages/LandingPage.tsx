@@ -15,10 +15,12 @@ import { useAuthStore } from '../store/useAuthStore'
 import { GeneratePage } from './GeneratePage'
 import { AuthPage } from './AuthPage'
 import { UserAreaPage } from './UserAreaPage'
+import { CompraPage } from './CompraPage'
 import { LandingHeader } from '../components/LandingHeader'
 import { WeMoveIcon } from '../components/WeMoveIcon'
+import type { ShoppingQuery } from '../services/api'
 
-type View = 'home' | 'access' | 'generate' | 'auth' | 'user-area'
+type View = 'home' | 'access' | 'generate' | 'auth' | 'user-area' | 'compra'
 
 // ── Ícone ─────────────────────────────────────────────────────────────────────
 
@@ -136,6 +138,30 @@ function HomeView({ onSelect }: { onSelect: (v: View) => void }) {
         </button>
       </div>
 
+      {/* Card "Me ajude a comprar" */}
+      <div className="w-full max-w-2xl mt-4">
+        <button
+          onClick={() => onSelect('compra')}
+          className="group w-full flex items-center justify-between gap-4 p-4 rounded-2xl border-2 border-border bg-white shadow-card hover:border-wm-blue hover:shadow-btn transition-all text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"
+                  stroke="#6366F1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-ink font-semibold text-sm">Me ajude a comprar</p>
+              <p className="text-ink-3 text-xs mt-0.5">Compare produtos e encontre o melhor preço com links diretos</p>
+            </div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-ink-3 group-hover:text-wm-blue transition-colors">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+
       {/* Features */}
       <div className="w-full max-w-2xl mt-10 grid grid-cols-3 gap-4 text-center">
         {[
@@ -240,13 +266,14 @@ export function LandingPage() {
   const user               = useAuthStore((s) => s.user)
   const authLoading        = useAuthStore((s) => s.authLoading)
 
-  const [view, setView] = useState<View>('home')
+  const [view,          setView]          = useState<View>('home')
+  const [selectedQuery, setSelectedQuery] = useState<ShoppingQuery | null>(null)
 
   // Redireciona quando auth termina de carregar
   useEffect(() => {
     if (authLoading) return
     const pending = consumePendingView()
-    if (pending) { setView(pending); return }
+    if (pending) { setView(pending as View); return }
     if (user) setView('user-area')   // logado → vai para sua área
   }, [authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -256,6 +283,11 @@ export function LandingPage() {
       setView('home')
     }
   }, [user, authLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function goToCompraFromHistory(query: ShoppingQuery) {
+    setSelectedQuery(query)
+    setView('compra')
+  }
 
   // Enquanto auth carrega, mostra tela vazia com gradiente
   if (authLoading && view === 'home') {
@@ -268,6 +300,8 @@ export function LandingPage() {
 
   // Views que usam o header padrão (sem a home, que tem layout próprio)
   const hasHeader = view !== 'home'
+  // CompraPage usa max-w-5xl (mais largo que as outras views)
+  const isWide = view === 'compra'
 
   return (
     <div className="min-h-screen bg-bg">
@@ -289,7 +323,8 @@ export function LandingPage() {
       )}
 
       <div className={[
-        'relative z-10 w-full max-w-3xl mx-auto px-4 pb-16',
+        'relative z-10 w-full mx-auto px-4 pb-16',
+        isWide ? 'max-w-5xl' : 'max-w-3xl',
         hasHeader ? 'pt-8' : 'pt-12 md:pt-20',
       ].join(' ')}>
         {view === 'home'      && <HomeView onSelect={setView} />}
@@ -302,7 +337,18 @@ export function LandingPage() {
           />
         )}
         {view === 'user-area' && (
-          <UserAreaPage onCreateNew={() => setView('generate')} />
+          <UserAreaPage
+            onCreateNew={() => setView('generate')}
+            onGoToCompra={() => { setSelectedQuery(null); setView('compra') }}
+            onOpenQuery={goToCompraFromHistory}
+          />
+        )}
+        {view === 'compra' && (
+          <CompraPage
+            onBack={() => { setSelectedQuery(null); setView(user ? 'user-area' : 'home') }}
+            onLogin={() => setView('auth')}
+            initialQuery={selectedQuery}
+          />
         )}
       </div>
     </div>

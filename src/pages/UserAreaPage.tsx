@@ -8,11 +8,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useListStore } from '../store/useListStore'
-import { listApi, userApi, type UserList } from '../services/api'
+import { listApi, userApi, comprasApi, type UserList, type ShoppingQuery, type RecommendedItem } from '../services/api'
 
 interface Props {
-  onCreateNew: () => void
+  onCreateNew:  () => void
+  onGoToCompra: () => void
+  onOpenQuery:  (query: ShoppingQuery) => void
 }
+
+type AreaTab = 'mudancas' | 'compras'
 
 type PageSize = 10 | 25 | 50 | 100
 
@@ -531,11 +535,147 @@ function AreaToast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
   )
 }
 
+// ── ComprasTab ────────────────────────────────────────────────────────────────
+
+function fmt(n: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(n)
+}
+
+function topItem(itens: RecommendedItem[]): RecommendedItem | undefined {
+  return itens.find((i) => i.badge === 'melhor_custo_beneficio') ?? itens[0]
+}
+
+function ComprasTab({ onGoToCompra, onOpenQuery }: { onGoToCompra: () => void; onOpenQuery: (q: ShoppingQuery) => void }) {
+  const [queries,  setQueries]  = useState<ShoppingQuery[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState<string | null>(null)
+
+  useEffect(() => { fetchQueries() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function fetchQueries() {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await comprasApi.list()
+      setQueries(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao carregar histórico')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-ink-3">
+        <div className="w-6 h-6 border-2 border-border border-t-wm-blue rounded-full animate-spin" />
+        <p className="text-sm">Carregando histórico...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-5 text-sm text-red-700 text-center">
+        ⚠️ {error}
+        <button onClick={fetchQueries} className="mt-2 block mx-auto text-xs underline">Tentar novamente</button>
+      </div>
+    )
+  }
+
+  if (queries.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <div className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg,#EFF6FF,#EDE9FE)' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"
+              stroke="#6366F1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <p className="font-display font-bold text-ink text-base mb-1">Nenhuma consulta ainda</p>
+        <p className="text-sm text-ink-2 max-w-xs mx-auto mb-6">
+          Use "Me ajude a comprar" para comparar produtos e encontrar os melhores preços.
+        </p>
+        <button
+          onClick={onGoToCompra}
+          className="px-6 py-3 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 transition-all"
+        >
+          🛒 Começar a comparar
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {queries.map((q) => {
+        const best = topItem(q.itens)
+        const date = new Date(q.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+
+        return (
+          <div
+            key={q.id}
+            className="w-full bg-white rounded-2xl border border-border overflow-hidden shadow-card hover:shadow-btn hover:border-wm-blue/40 transition-all group flex"
+          >
+            {/* Borda lateral */}
+            <div className="w-1 flex-shrink-0" style={{ background: 'linear-gradient(180deg, #3B82F6 0%, #6366F1 100%)' }} />
+
+            <button
+              onClick={() => onOpenQuery(q)}
+              className="flex-1 p-4 text-left min-w-0"
+            >
+              {/* Mobile */}
+              <div className="md:hidden">
+                <p className="font-display font-bold text-ink text-sm leading-snug truncate group-hover:text-wm-blue transition-colors">
+                  {q.nome}
+                </p>
+                <p className="text-xs text-ink-3 mt-0.5">{date} · {q.itens.length} opções</p>
+                {best && (
+                  <p className="text-xs text-ink-2 mt-1">
+                    ⭐ Destaque: <span className="font-medium">{best.nome}</span> — {fmt(best.preco)}
+                  </p>
+                )}
+              </div>
+
+              {/* Desktop */}
+              <div className="hidden md:flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-semibold text-ink text-sm truncate group-hover:text-wm-blue transition-colors">
+                    {q.nome}
+                  </p>
+                  <p className="text-[11px] text-ink-3 mt-0.5">{date}</p>
+                </div>
+                {best && (
+                  <div className="flex-1 min-w-0 hidden lg:block">
+                    <p className="text-xs text-ink-2 truncate">⭐ {best.nome}</p>
+                    <p className="text-xs font-bold text-ink">{fmt(best.preco)}</p>
+                  </div>
+                )}
+                <span className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap border"
+                  style={{ background: 'linear-gradient(135deg,#EFF6FF,#EDE9FE)', color: '#4F46E5', borderColor: '#C7D2FE' }}>
+                  {q.itens.length} opções
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  className="text-ink-3 group-hover:text-wm-blue transition-colors flex-shrink-0">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── UserAreaPage ──────────────────────────────────────────────────────────────
 
-export function UserAreaPage({ onCreateNew }: Props) {
+export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery }: Props) {
   const user            = useAuthStore((s) => s.user)
   const setTokenAndInit = useListStore((s) => s.setTokenAndInit)
+
+  const [areaTab, setAreaTab] = useState<AreaTab>('mudancas')
 
   const [lists,        setLists]        = useState<UserList[]>([])
   const [listsLoading, setListsLoading] = useState(true)
@@ -620,16 +760,53 @@ export function UserAreaPage({ onCreateNew }: Props) {
         style={{ background: 'linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 60%, #EDE9FE 100%)' }}
       >
         {/* Linha superior: título + ações */}
-        <div className="flex items-start justify-between gap-3">
+        {/* Linha superior: título + email */}
+        <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h2 className="font-display font-bold text-2xl gradient-text leading-tight">
-              Minhas listas
+              Minha área
             </h2>
             <p className="text-xs text-ink-3 mt-0.5 truncate max-w-[220px]">{email}</p>
           </div>
+        </div>
 
-          {/* Botões de ação */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Submenus */}
+        <div className="flex gap-2 bg-white/60 rounded-xl p-1 border border-blue-100">
+          <button
+            onClick={() => setAreaTab('mudancas')}
+            className={[
+              'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-[9px] text-sm font-semibold transition-all',
+              areaTab === 'mudancas'
+                ? 'gradient-bg text-white shadow-btn'
+                : 'text-ink-3 hover:text-ink',
+            ].join(' ')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Minhas mudanças
+          </button>
+          <button
+            onClick={() => setAreaTab('compras')}
+            className={[
+              'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-[9px] text-sm font-semibold transition-all',
+              areaTab === 'compras'
+                ? 'gradient-bg text-white shadow-btn'
+                : 'text-ink-3 hover:text-ink',
+            ].join(' ')}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"
+                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Minhas compras
+          </button>
+        </div>
+
+        {/* Ações específicas da aba — só mudanças tem vincular/nova lista */}
+        {areaTab === 'mudancas' && (
+          <div className="flex items-center gap-2 mt-3 justify-end">
             {!showLinkForm && (
               <button
                 onClick={() => setShowLinkForm(true)}
@@ -653,10 +830,26 @@ export function UserAreaPage({ onCreateNew }: Props) {
               <span className="sm:hidden">Nova</span>
             </button>
           </div>
-        </div>
+        )}
 
-        {/* Pills de stats — só quando há listas */}
-        {totalCount > 0 && (
+        {areaTab === 'compras' && (
+          <div className="flex items-center gap-2 mt-3 justify-end">
+            <button
+              onClick={onGoToCompra}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="white" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <span className="hidden sm:inline">Nova consulta</span>
+              <span className="sm:hidden">Buscar</span>
+            </button>
+          </div>
+        )}
+
+        {/* Pills de stats — só na aba mudanças e quando há listas */}
+        {areaTab === 'mudancas' && totalCount > 0 && (
           <div className="flex gap-2 flex-wrap mt-4">
             <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-white/80 border border-blue-200 text-wm-blue">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
@@ -682,8 +875,8 @@ export function UserAreaPage({ onCreateNew }: Props) {
           </div>
         )}
 
-        {/* Barra de busca */}
-        {totalCount > 0 && (
+        {/* Barra de busca — só na aba mudanças */}
+        {areaTab === 'mudancas' && totalCount > 0 && (
           <div className="relative mt-3">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 pointer-events-none">
@@ -710,6 +903,15 @@ export function UserAreaPage({ onCreateNew }: Props) {
           </div>
         )}
       </div>
+
+      {/* ── Aba Minhas compras ────────────────────────────────────────────────── */}
+      {areaTab === 'compras' && (
+        <ComprasTab onGoToCompra={onGoToCompra} onOpenQuery={onOpenQuery} />
+      )}
+
+      {/* ── Aba Minhas mudanças ───────────────────────────────────────────────── */}
+      {areaTab === 'mudancas' && (
+      <>
 
       {/* ── Formulário de vínculo ─────────────────────────────────────────────── */}
       {showLinkForm && (
@@ -778,6 +980,9 @@ export function UserAreaPage({ onCreateNew }: Props) {
             onPageSize={setPageSize}
           />
         </>
+      )}
+
+      </> // fim areaTab === 'mudancas'
       )}
 
       {/* ── Modais ───────────────────────────────────────────────────────────── */}

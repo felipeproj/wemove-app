@@ -12,10 +12,11 @@ const TABS: { id: TabType; label: string }[] = [
 ]
 
 function UserButton() {
-  const user        = useAuthStore((s) => s.user)
-  const signOut     = useAuthStore((s) => s.signOut)
-  const goToAuth    = useListStore((s) => s.goToAuth)
+  const user         = useAuthStore((s) => s.user)
+  const signOut      = useAuthStore((s) => s.signOut)
+  const goToAuth     = useListStore((s) => s.goToAuth)
   const goToUserArea = useListStore((s) => s.goToUserArea)
+  const goToCompra   = useListStore((s) => s.goToCompra)
 
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -72,6 +73,16 @@ function UserButton() {
               <path d="M7 10h10M7 14h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
             Minhas listas
+          </button>
+          <button
+            onClick={() => { setOpen(false); goToCompra() }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-bg transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"
+                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Me ajude a comprar
           </button>
           <button
             onClick={async () => { setOpen(false); await signOut() }}
