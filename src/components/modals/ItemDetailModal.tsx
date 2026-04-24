@@ -60,7 +60,7 @@ const LOJA_COLORS: Record<string, string> = {
   'Amazon':        '#FF9900',
   'Shopee':        '#EE4D2D',
   'Mercado Livre': '#E8820C',
-  'Americanas':    '#E60014',
+  'KaBuM!':        '#F6620A',
 }
 
 // ── Sub-componentes utilitários ───────────────────────────────────────────────
@@ -86,7 +86,7 @@ function StarRating({ value }: { value: number }) {
 
 function LojaChip({ loja }: { loja: string }) {
   const bg = LOJA_COLORS[loja] ?? '#64748B'
-  const isDark = loja !== 'Mercado Livre' && loja !== 'Amazon'
+  const isDark = loja !== 'Mercado Livre' && loja !== 'Amazon' && loja !== 'KaBuM!'
   return (
     <span
       className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold leading-none"
