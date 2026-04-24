@@ -63,6 +63,38 @@ const LOJA_COLORS: Record<string, string> = {
   'KaBuM!':        '#F6620A',
 }
 
+// ── PriceTag ──────────────────────────────────────────────────────────────────
+
+/**
+ * Exibe o preço com indicador visual quando ele é estimado pela IA.
+ *  - preco_estimado=false (ML com preço real) → exibe normalmente
+ *  - preco_estimado=true  (Amazon/Magalu)     → prefixo "~" + badge "est."
+ */
+function PriceTag({
+  preco,
+  estimado,
+  className = 'font-display text-base font-bold text-ink',
+}: {
+  preco:     number
+  estimado?: boolean
+  className?: string
+}) {
+  if (!estimado) {
+    return <span className={className}>{fmt(preco)}</span>
+  }
+  return (
+    <span className="inline-flex items-baseline gap-1">
+      <span className={className}>~{fmt(preco)}</span>
+      <span
+        title="Preço estimado pela IA — confirme no site antes de comprar"
+        className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200 cursor-help"
+      >
+        est.
+      </span>
+    </span>
+  )
+}
+
 // ── Sub-componentes utilitários ───────────────────────────────────────────────
 
 function StarRating({ value }: { value: number }) {
@@ -143,7 +175,9 @@ function HighlightSection({ recs }: { recs: RecommendedItem[] }) {
                   <LojaChip loja={rec.loja} />
                   <StarRating value={rec.avaliacao} />
                 </div>
-                <p className="font-display text-base font-bold text-ink mb-2">{fmt(rec.preco)}</p>
+                <div className="mb-2">
+                  <PriceTag preco={rec.preco} estimado={rec.preco_estimado} className="font-display text-base font-bold text-ink" />
+                </div>
                 {/* Pros/Cons resumidos */}
                 <div className="space-y-1 mb-3">
                   {rec.pontos_fortes.slice(0, 2).map((p, j) => (
@@ -229,7 +263,9 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
                   <LojaChip loja={rec.loja} />
                 </div>
                 <StarRating value={rec.avaliacao} />
-                <p className="font-display text-sm font-bold text-ink mt-1.5">{fmt(rec.preco)}</p>
+                <div className="mt-1.5">
+                  <PriceTag preco={rec.preco} estimado={rec.preco_estimado} className="font-display text-sm font-bold text-ink" />
+                </div>
               </div>
             </button>
           )
@@ -247,8 +283,8 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
                 {rec.descricao && <p className="text-xs text-ink-3 mt-0.5">{rec.descricao}</p>}
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="font-display text-xl font-bold text-ink">{fmt(rec.preco)}</p>
-                <LojaChip loja={rec.loja} />
+                <PriceTag preco={rec.preco} estimado={rec.preco_estimado} className="font-display text-xl font-bold text-ink" />
+                <div className="mt-0.5"><LojaChip loja={rec.loja} /></div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -313,7 +349,9 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
                 {sorted.map((rec, i) => (
                   <th key={i} className="pb-2 px-2 text-center min-w-[120px]">
                     <div className="text-[10px] font-bold text-ink leading-tight line-clamp-2">{rec.nome.split(' ').slice(0,4).join(' ')}</div>
-                    <div className="font-display text-sm font-bold text-wm-blue mt-0.5">{fmt(rec.preco)}</div>
+                    <div className="mt-0.5">
+                      <PriceTag preco={rec.preco} estimado={rec.preco_estimado} className="font-display text-sm font-bold text-wm-blue" />
+                    </div>
                     {rec.badge && (
                       <div className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1 border"
                         style={{ background: BADGE_STYLE[rec.badge].bg, color: BADGE_STYLE[rec.badge].text, borderColor: BADGE_STYLE[rec.badge].border }}>

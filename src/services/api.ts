@@ -123,16 +123,17 @@ export const suggestApi = {
 // ── Recomendações de compra ───────────────────────────────────────────────────
 
 export interface RecommendedItem {
-  nome:          string
-  descricao:     string
-  imagem_query:  string
-  loja:          string
-  preco:         number
-  avaliacao:     number
-  pontos_fortes: string[]
-  pontos_fracos: string[]
-  badge:         'melhor_custo_beneficio' | 'mais_barato' | 'mais_caro' | null
-  link:          string
+  nome:            string
+  descricao:       string
+  imagem_query:    string
+  loja:            string
+  preco:           number
+  preco_estimado:  boolean   // true = preço gerado pela IA; false = preço real da loja (ML)
+  avaliacao:       number
+  pontos_fortes:   string[]
+  pontos_fracos:   string[]
+  badge:           'melhor_custo_beneficio' | 'mais_barato' | 'mais_caro' | null
+  link:            string
 }
 
 export interface RecommendResult {

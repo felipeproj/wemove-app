@@ -111,7 +111,14 @@ function ProductCard({ item, highlight }: { item: RecommendedItem; highlight?: b
         {/* Avaliação + preço */}
         <div className="flex items-center justify-between gap-2">
           <StarRating value={item.avaliacao} />
-          <span className="text-lg font-bold text-ink">{fmt(item.preco)}</span>
+          <div className="text-right">
+            <span className="text-lg font-bold text-ink">
+              {item.preco_estimado ? '~' : ''}{fmt(item.preco)}
+            </span>
+            {item.preco_estimado && (
+              <p className="text-[10px] text-amber-600 font-medium">preço estimado</p>
+            )}
+          </div>
         </div>
 
         {/* Pontos fortes / fracos */}
@@ -206,7 +213,14 @@ function ComparisonTable({ itens }: { itens: RecommendedItem[] }) {
                   <LojaBadge loja={item.loja} />
                 </td>
                 {/* Preço */}
-                <td className="px-4 py-3 text-center font-bold text-ink">{fmt(item.preco)}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className="font-bold text-ink">
+                    {item.preco_estimado ? '~' : ''}{fmt(item.preco)}
+                  </span>
+                  {item.preco_estimado && (
+                    <p className="text-[10px] text-amber-600 font-medium mt-0.5">estimado</p>
+                  )}
+                </td>
                 {/* Avaliação */}
                 <td className="px-4 py-3 text-center">
                   <StarRating value={item.avaliacao} />
