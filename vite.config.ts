@@ -38,21 +38,13 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'navigation-cache',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 10, maxAgeSeconds: 86400 },
-            },
-          },
           {
             urlPattern: /^https:\/\/api\.wemoveapp\.co\/.*/i,
             handler: 'NetworkFirst',
