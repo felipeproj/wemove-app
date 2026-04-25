@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useListStore } from './store/useListStore'
 import { useAuthStore } from './store/useAuthStore'
 import { WeMoveIcon } from './components/WeMoveIcon'
@@ -8,6 +8,7 @@ import { ListaPage } from './pages/ListaPage'
 import { ResumoPage } from './pages/ResumoPage'
 import { DashPage } from './pages/DashPage'
 import { LandingPage } from './pages/LandingPage'
+import { AdminPage } from './pages/AdminPage'
 import { usePolling } from './hooks/usePolling'
 
 export default function App() {
@@ -18,13 +19,20 @@ export default function App() {
   const tab        = useListStore((s) => s.tab)
   const needsSetup = useListStore((s) => s.needsSetup)
   const initAuth   = useAuthStore((s) => s.init)
+  const role       = useAuthStore((s) => s.role)
+  const [showAdmin, setShowAdmin] = useState(false)
 
   useEffect(() => { initList() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { const unsub = initAuth(); return unsub }, []) // eslint-disable-line react-hooks/exhaustive-deps
   usePolling()
 
+  // ── Admin (overlay prioritário) ───────────────────────────────────────────
+  if (showAdmin && role === 'admin') {
+    return <AdminPage onBack={() => setShowAdmin(false)} />
+  }
+
   // ── Landing (sem token na URL) ────────────────────────────────────────────
-  if (needsSetup) return <LandingPage />
+  if (needsSetup) return <LandingPage onOpenAdmin={role === 'admin' ? () => setShowAdmin(true) : undefined} />
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {

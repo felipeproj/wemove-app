@@ -261,7 +261,11 @@ function AccessView({ onBack }: { onBack: () => void }) {
 
 // ── LandingPage ───────────────────────────────────────────────────────────────
 
-export function LandingPage() {
+interface LandingPageProps {
+  onOpenAdmin?: () => void
+}
+
+export function LandingPage({ onOpenAdmin }: LandingPageProps = {}) {
   const consumePendingView = useListStore((s) => s.consumePendingView)
   const user               = useAuthStore((s) => s.user)
   const authLoading        = useAuthStore((s) => s.authLoading)
@@ -341,6 +345,7 @@ export function LandingPage() {
             onCreateNew={() => setView('generate')}
             onGoToCompra={() => { setSelectedQuery(null); setView('compra') }}
             onOpenQuery={goToCompraFromHistory}
+            onOpenAdmin={onOpenAdmin}
           />
         )}
         {view === 'compra' && (

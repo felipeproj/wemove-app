@@ -183,3 +183,49 @@ export const userApi = {
   claimList: (token: string) =>
     request<{ ok: boolean; list_id: string }>('POST', '/me/lists/claim', { token }),
 }
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export interface AdminMetrics {
+  users:           { total: number; last_24h: number; last_7d: number }
+  lists:           { total: number; last_24h: number; last_7d: number }
+  recommendations: { total: number; last_24h: number; last_7d: number }
+  plans:           { free: number; essencial: number; familia: number; pro: number }
+  paid_users:      number
+  conversion_rate: number
+  generated_at:    string
+}
+
+export interface AdminUser {
+  id:              string
+  email:           string
+  full_name:       string | null
+  avatar_url:      string | null
+  provider:        string
+  created_at:      string
+  last_sign_in_at: string | null
+  role:            'user' | 'admin'
+  plan:            'free' | 'essencial' | 'familia' | 'pro'
+  plan_expires_at: string | null
+}
+
+export interface AdminUsersResult {
+  users: AdminUser[]
+  total: number
+  page:  number
+  limit: number
+}
+
+export const adminApi = {
+  getMetrics: () =>
+    request<AdminMetrics>('GET', '/admin/metrics'),
+
+  getUsers: (page = 1, limit = 50, search = '') =>
+    request<AdminUsersResult>('GET', `/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
+
+  updateUserRole: (
+    userId: string,
+    updates: { role?: 'user' | 'admin'; plan?: 'free' | 'essencial' | 'familia' | 'pro'; plan_expires_at?: string | null }
+  ) =>
+    request<{ user_id: string; role: string; plan: string }>('PATCH', `/admin/users/${userId}/role`, updates),
+}

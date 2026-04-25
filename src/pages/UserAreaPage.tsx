@@ -14,6 +14,7 @@ interface Props {
   onCreateNew:  () => void
   onGoToCompra: () => void
   onOpenQuery:  (query: ShoppingQuery) => void
+  onOpenAdmin?: () => void
 }
 
 type AreaTab = 'mudancas' | 'compras'
@@ -671,8 +672,9 @@ function ComprasTab({ onGoToCompra, onOpenQuery }: { onGoToCompra: () => void; o
 
 // ── UserAreaPage ──────────────────────────────────────────────────────────────
 
-export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery }: Props) {
+export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery, onOpenAdmin }: Props) {
   const user            = useAuthStore((s) => s.user)
+  const role            = useAuthStore((s) => s.role)
   const setTokenAndInit = useListStore((s) => s.setTokenAndInit)
 
   const [areaTab, setAreaTab] = useState<AreaTab>('mudancas')
@@ -817,6 +819,16 @@ export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery }: Props) 
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
                 <span className="hidden sm:inline">Vincular</span>
+              </button>
+            )}
+            {role === 'admin' && onOpenAdmin && (
+              <button
+                onClick={onOpenAdmin}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-all"
+                title="Painel de administração"
+              >
+                🔐
+                <span className="hidden sm:inline">Admin</span>
               </button>
             )}
             <button
