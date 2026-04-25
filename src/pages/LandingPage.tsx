@@ -345,7 +345,6 @@ export function LandingPage({ onOpenAdmin }: LandingPageProps = {}) {
             onCreateNew={() => setView('generate')}
             onGoToCompra={() => { setSelectedQuery(null); setView('compra') }}
             onOpenQuery={goToCompraFromHistory}
-            onOpenAdmin={onOpenAdmin}
           />
         )}
         {view === 'compra' && (

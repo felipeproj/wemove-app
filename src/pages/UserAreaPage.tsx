@@ -14,7 +14,6 @@ interface Props {
   onCreateNew:  () => void
   onGoToCompra: () => void
   onOpenQuery:  (query: ShoppingQuery) => void
-  onOpenAdmin?: () => void
 }
 
 type AreaTab = 'mudancas' | 'compras'
@@ -672,9 +671,8 @@ function ComprasTab({ onGoToCompra, onOpenQuery }: { onGoToCompra: () => void; o
 
 // ── UserAreaPage ──────────────────────────────────────────────────────────────
 
-export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery, onOpenAdmin }: Props) {
+export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery }: Props) {
   const user            = useAuthStore((s) => s.user)
-  const role            = useAuthStore((s) => s.role)
   const setTokenAndInit = useListStore((s) => s.setTokenAndInit)
 
   const [areaTab, setAreaTab] = useState<AreaTab>('mudancas')
