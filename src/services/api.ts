@@ -217,8 +217,8 @@ export interface AdminUsersResult {
 }
 
 export const paymentApi = {
-  createCheckout: (plan: 'essencial' | 'familia') =>
-    request<{ url: string }>('POST', '/payments/checkout', { plan }),
+  createCheckout: (plan: 'essencial' | 'familia', listToken?: string | null) =>
+    request<{ url: string }>('POST', '/payments/checkout', { plan, list_token: listToken ?? undefined }),
 }
 
 export const adminApi = {

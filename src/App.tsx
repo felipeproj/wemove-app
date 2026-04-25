@@ -26,6 +26,18 @@ export default function App() {
   useEffect(() => { const unsub = initAuth(); return unsub }, []) // eslint-disable-line react-hooks/exhaustive-deps
   usePolling()
 
+  // Limpa params do Stripe da URL sem causar reload
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('upgrade')) {
+      params.delete('upgrade')
+      params.delete('plan')
+      const newSearch = params.toString()
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '')
+      window.history.replaceState({}, '', newUrl)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Admin (overlay prioritário) ───────────────────────────────────────────
   if (showAdmin && role === 'admin') {
     return <AdminPage onBack={() => setShowAdmin(false)} />

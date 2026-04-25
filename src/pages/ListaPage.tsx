@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useListStore } from '../store/useListStore'
 import type { RecommendedItem } from '../services/api'
 import { MetricsBar } from '../components/MetricsBar'
@@ -190,6 +190,16 @@ export function ListaPage() {
   const filtered = useFilteredItems(search, ambFilter)
   const { toasts, show: showToast } = useToast()
   const pending = totalItems - boughtItems
+
+  // Toast de boas-vindas ao plano pago quando usuário volta do Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('upgrade') === 'success') {
+      const plan = params.get('plan')
+      const label = plan === 'familia' ? 'Família' : 'Essencial'
+      showToast(`🎉 Plano ${label} ativado! Agora você tem itens ilimitados.`, 'success')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── DnD handlers ──────────────────────────────────────────────────────────
   function handleDragStart(e: React.DragEvent, id: string) {

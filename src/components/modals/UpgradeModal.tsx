@@ -44,6 +44,7 @@ const PLANS: { key: PlanKey; name: string; price: string; period: string; desc: 
 
 export function UpgradeModal({ onClose }: Props) {
   const setModalOpen = useListStore((s) => s.setModalOpen)
+  const listToken    = useListStore((s) => s.token)
   const user         = useAuthStore((s) => s.user)
   const [loading, setLoading] = useState<PlanKey | null>(null)
   const [error,   setError]   = useState<string | null>(null)
@@ -61,7 +62,7 @@ export function UpgradeModal({ onClose }: Props) {
     setLoading(plan)
     setError(null)
     try {
-      const { url } = await paymentApi.createCheckout(plan)
+      const { url } = await paymentApi.createCheckout(plan, listToken)
       window.location.href = url
     } catch {
       setError('Não foi possível iniciar o pagamento. Tente novamente.')
