@@ -107,7 +107,7 @@ function CardActions({ onRename, onDelete }: CardActionsProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-30 bg-white rounded-xl border border-border shadow-modal w-40 py-1 animate-fade-in">
+        <div className="absolute right-0 top-9 z-[100] bg-white rounded-xl border border-border shadow-modal w-40 py-1 animate-fade-in">
           <button
             onClick={(e) => { e.stopPropagation(); setOpen(false); onRename() }}
             className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink hover:bg-bg transition-colors"
@@ -154,10 +154,10 @@ function ListCard({ list, onOpen, onRename, onDelete }: ListCardProps) {
   })
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-border overflow-hidden shadow-card hover:shadow-btn hover:border-wm-blue/40 transition-all group flex">
-      {/* Borda lateral colorida */}
+    <div className="w-full bg-white rounded-2xl border border-border shadow-card hover:shadow-btn hover:border-wm-blue/40 transition-all group flex">
+      {/* Borda lateral colorida — rounded-l para manter os cantos sem overflow-hidden */}
       <div
-        className="w-1 flex-shrink-0 transition-all"
+        className="w-1 flex-shrink-0 rounded-l-2xl transition-all"
         style={{ background: done ? ACCENT_DONE : ACCENT_ACTIVE }}
       />
 
