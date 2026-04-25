@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand'
-import { listApi, itemApi } from '../services/api'
+import { listApi, itemApi, ApiError } from '../services/api'
 import type {
   Item,
   Permission,
@@ -56,6 +56,8 @@ interface ListStore {
   goToCompra: () => void
   modalOpen: boolean
   setModalOpen: (open: boolean) => void
+  showUpgrade: boolean
+  setShowUpgrade: (show: boolean) => void
   pendingLandingView: 'auth' | 'user-area' | 'compra' | null
   consumePendingView: () => 'auth' | 'user-area' | 'compra' | null
 }
@@ -100,6 +102,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   error: null,
   needsSetup: false,
   modalOpen: false,
+  showUpgrade: false,
   pendingLandingView: null,
 
   // ── Inicialização ──────────────────────────────────────────────────────────
@@ -176,9 +179,17 @@ export const useListStore = create<ListStore>((set, get) => ({
   addItem: async (payload) => {
     const { token } = get()
     if (!token) throw new Error('Lista não inicializada')
-    const item = await itemApi.create(token, payload)
-    set((s) => ({ items: [...s.items, item] }))
-    return item
+    try {
+      const item = await itemApi.create(token, payload)
+      set((s) => ({ items: [...s.items, item] }))
+      return item
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 402) {
+        set({ showUpgrade: true })
+        throw err
+      }
+      throw err
+    }
   },
 
   updateItem: async (itemId, payload) => {
@@ -229,6 +240,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   setFilter: (filter) => set({ filter }),
   setTab: (tab) => set({ tab }),
   setModalOpen: (open) => set({ modalOpen: open }),
+  setShowUpgrade: (show) => set({ showUpgrade: show }),
 
   consumePendingView: () => {
     const v = get().pendingLandingView

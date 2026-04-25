@@ -8,6 +8,7 @@ import { ItemFormModal } from '../components/modals/ItemFormModal'
 import { CompraModal } from '../components/modals/CompraModal'
 import { ConfirmModal } from '../components/modals/ConfirmModal'
 import { ItemDetailModal } from '../components/modals/ItemDetailModal'
+import { UpgradeModal } from '../components/modals/UpgradeModal'
 import { ToastContainer } from '../components/Toast'
 import { useFilteredItems } from '../hooks/useFilteredItems'
 import { useToast } from '../hooks/useToast'
@@ -164,6 +165,8 @@ export function ListaPage() {
   const listTitle     = useListStore((s) => s.listTitle)
   const allItems      = useListStore((s) => s.items)
   const filter        = useListStore((s) => s.filter)
+  const showUpgrade   = useListStore((s) => s.showUpgrade)
+  const setShowUpgrade = useListStore((s) => s.setShowUpgrade)
   const totalItems    = allItems.length
   const boughtItems   = allItems.filter((i) => i.comprado).length
 
@@ -362,6 +365,10 @@ export function ListaPage() {
           onRemove={() => setRemoveTarget(detailItem)}
           recoCache={recoCache}
         />
+      )}
+
+      {showUpgrade && (
+        <UpgradeModal onClose={() => setShowUpgrade(false)} />
       )}
 
       <ToastContainer toasts={toasts} />
