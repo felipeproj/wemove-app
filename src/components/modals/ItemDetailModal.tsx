@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import type { MutableRefObject } from 'react'
 import type { Item } from '../../types'
 import { fmt } from '../../utils/fmt'
 import { useListStore } from '../../store/useListStore'
@@ -437,23 +438,40 @@ function ComparisonSection({ recs }: { recs: RecommendedItem[] }) {
 
 // ── Tab: Recomendações ────────────────────────────────────────────────────────
 
-function RecommendacoesTab({ item }: { item: Item }) {
-  const [loading, setLoading] = useState(false)
-  const [recs,    setRecs]    = useState<RecommendedItem[]>([])
+function RecommendacoesTab({
+  item,
+  cache,
+}: {
+  item: Item
+  cache?: MutableRefObject<Map<string, RecommendedItem[]>>
+}) {
+  const cached = cache?.current.get(item.id)
+  const [loading, setLoading] = useState(!cached)
+  const [recs,    setRecs]    = useState<RecommendedItem[]>(cached ?? [])
   const [error,   setError]   = useState<string | null>(null)
 
   function load() {
     setLoading(true)
     setError(null)
-    setRecs([])
     recommendApi
       .get(item.nome, item.amb, item.cat, item.preco_min, item.preco_max)
-      .then((res) => setRecs(res.itens))
+      .then((res) => {
+        setRecs(res.itens)
+        cache?.current.set(item.id, res.itens)
+      })
       .catch((e)  => setError(e instanceof Error ? e.message : 'Erro ao carregar recomendações'))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [item.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Se já temos resultado em cache, não refaz a requisição
+    if (cache?.current.has(item.id)) {
+      setRecs(cache.current.get(item.id)!)
+      setLoading(false)
+    } else {
+      load()
+    }
+  }, [item.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -595,9 +613,10 @@ interface Props {
   onEdit: () => void
   onBuy: () => void
   onRemove: () => void
+  recoCache?: MutableRefObject<Map<string, RecommendedItem[]>>
 }
 
-export function ItemDetailModal({ item, onClose, onEdit, onBuy, onRemove }: Props) {
+export function ItemDetailModal({ item, onClose, onEdit, onBuy, onRemove, recoCache }: Props) {
   const [tab, setTab] = useState<TabType>('detalhes')
   const setModalOpen  = useListStore((s) => s.setModalOpen)
 
@@ -608,7 +627,7 @@ export function ItemDetailModal({ item, onClose, onEdit, onBuy, onRemove }: Prop
 
   /**
    * Tamanho do modal conforme aba ativa:
-   *   Mobile  → sempre full width (w-full)
+   *   Mobile  → bottom sheet (full width, sem padding lateral)
    *   Desktop + Detalhes      → compacto (md:max-w-lg)
    *   Desktop + Recomendações → largo (md:w-[80vw] md:max-w-6xl)
    */
@@ -619,15 +638,26 @@ export function ItemDetailModal({ item, onClose, onEdit, onBuy, onRemove }: Prop
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-ink/30 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-ink/30 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className={[
-          'bg-bg rounded-2xl shadow-modal animate-fade-in flex flex-col max-h-[90vh] transition-all duration-300',
+          'bg-bg shadow-modal animate-fade-in flex flex-col transition-all duration-300',
+          'max-h-[92vh] sm:max-h-[90vh]',
+          'rounded-t-3xl sm:rounded-2xl',
           modalSizeClass,
         ].join(' ')}
       >
+
+        {/* ── Drag handle — só mobile ──────────────────────────────────────── */}
+        <div className="sm:hidden flex justify-center pt-3 pb-0 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="w-10 h-1.5 bg-border-2 rounded-full hover:bg-ink-3 transition-colors"
+            aria-label="Fechar"
+          />
+        </div>
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex items-start gap-3 p-4 pb-0 flex-shrink-0">
@@ -693,7 +723,7 @@ export function ItemDetailModal({ item, onClose, onEdit, onBuy, onRemove }: Prop
               onRemove={() => { onClose(); onRemove() }}
             />
           ) : (
-            <RecommendacoesTab item={item} />
+            <RecommendacoesTab item={item} cache={recoCache} />
           )}
         </div>
 

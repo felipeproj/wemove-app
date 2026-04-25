@@ -24,6 +24,7 @@ interface ListStore {
   permission: Permission
   listTitle: string
   items: Item[]
+  configJson: Record<string, unknown>
 
   // UI
   filter: FilterType
@@ -44,6 +45,7 @@ interface ListStore {
   removeItem: (itemId: string) => Promise<void>
   markBought: (itemId: string, gasto: number, loja: string) => Promise<void>
   unmarkBought: (itemId: string) => Promise<void>
+  reorderItems: (ids: string[]) => Promise<void>
 
   // actions — UI
   setFilter: (filter: FilterType) => void
@@ -71,6 +73,18 @@ function setTokenInUrl(token: string): void {
   window.history.replaceState({}, '', url.toString())
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Reordena os itens conforme o array de IDs salvo em config_json.item_order */
+function applyOrder(items: Item[], config: Record<string, unknown>): Item[] {
+  const order = config.item_order as string[] | undefined
+  if (!order?.length) return items
+  const idxMap = new Map(order.map((id, i) => [id, i]))
+  return [...items].sort(
+    (a, b) => (idxMap.get(a.id) ?? 9999) - (idxMap.get(b.id) ?? 9999),
+  )
+}
+
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 export const useListStore = create<ListStore>((set, get) => ({
@@ -78,6 +92,7 @@ export const useListStore = create<ListStore>((set, get) => ({
   permission: 'edit',
   listTitle: '',
   items: [],
+  configJson: {},
   filter: 'todos',
   tab: 'lista',
   loading: false,
@@ -102,11 +117,13 @@ export const useListStore = create<ListStore>((set, get) => ({
 
     try {
       const data = await listApi.get(urlToken)
+      const cfg = (data.config_json ?? {}) as Record<string, unknown>
       set({
         token: urlToken,
         permission: data.permission,
         listTitle: data.title,
-        items: data.items,
+        configJson: cfg,
+        items: applyOrder(data.items, cfg),
         loading: false,
         loadingMessage: '',
       })
@@ -125,11 +142,13 @@ export const useListStore = create<ListStore>((set, get) => ({
     set({ needsSetup: false, loading: true, loadingMessage: 'Carregando sua lista...', error: null, permission: 'edit' })
     try {
       const data = await listApi.get(token)
+      const cfg = (data.config_json ?? {}) as Record<string, unknown>
       set({
         token,
         permission: data.permission,
         listTitle: data.title,
-        items: data.items,
+        configJson: cfg,
+        items: applyOrder(data.items, cfg),
         loading: false,
         loadingMessage: '',
       })
@@ -187,6 +206,24 @@ export const useListStore = create<ListStore>((set, get) => ({
     await get().updateItem(itemId, { comprado: false, gasto: 0, loja: '' })
   },
 
+  reorderItems: async (ids: string[]) => {
+    const { token, configJson, items } = get()
+    if (!token) return
+    const newConfig = { ...configJson, item_order: ids }
+    const idxMap = new Map(ids.map((id, i) => [id, i]))
+    const sorted = [...items].sort(
+      (a, b) => (idxMap.get(a.id) ?? 9999) - (idxMap.get(b.id) ?? 9999),
+    )
+    // Atualização otimista
+    set({ items: sorted, configJson: newConfig })
+    try {
+      await listApi.update(token, { config_json: newConfig })
+    } catch {
+      // Rollback em caso de erro
+      set({ items, configJson })
+    }
+  },
+
   // ── UI ────────────────────────────────────────────────────────────────────
 
   setFilter: (filter) => set({ filter }),
@@ -209,6 +246,7 @@ export const useListStore = create<ListStore>((set, get) => ({
       token: null,
       permission: 'edit',   // reset para evitar que 'view' vaze entre sessões
       items: [],
+      configJson: {},
       listTitle: '',
       error: null,
       loading: false,

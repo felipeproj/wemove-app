@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useListStore } from '../store/useListStore'
+import type { RecommendedItem } from '../services/api'
 import { MetricsBar } from '../components/MetricsBar'
 import { FilterBar } from '../components/FilterBar'
 import { ItemRow } from '../components/ItemRow'
@@ -157,14 +158,17 @@ function exportToPdf(title: string, items: Item[]) {
 // ── ListaPage ─────────────────────────────────────────────────────────────────
 
 export function ListaPage() {
-  const permission  = useListStore((s) => s.permission)
-  const removeItem  = useListStore((s) => s.removeItem)
-  const listTitle   = useListStore((s) => s.listTitle)
-  const allItems    = useListStore((s) => s.items)
-  const totalItems  = allItems.length
-  const boughtItems = allItems.filter((i) => i.comprado).length
+  const permission    = useListStore((s) => s.permission)
+  const removeItem    = useListStore((s) => s.removeItem)
+  const reorderItems  = useListStore((s) => s.reorderItems)
+  const listTitle     = useListStore((s) => s.listTitle)
+  const allItems      = useListStore((s) => s.items)
+  const filter        = useListStore((s) => s.filter)
+  const totalItems    = allItems.length
+  const boughtItems   = allItems.filter((i) => i.comprado).length
 
   const [search,       setSearch]       = useState('')
+  const [ambFilter,    setAmbFilter]    = useState<string | null>(null)
   const [detailItem,   setDetailItem]   = useState<Item | null>(null)
   const [editItem,     setEditItem]     = useState<Item | null>(null)
   const [buyItem,      setBuyItem]      = useState<Item | null>(null)
@@ -172,9 +176,49 @@ export function ListaPage() {
   const [showAdd,      setShowAdd]      = useState(false)
   const [removing,     setRemoving]     = useState(false)
 
-  const filtered = useFilteredItems(search)
+  // Cache de recomendações — persiste enquanto a página está montada
+  const recoCache = useRef<Map<string, RecommendedItem[]>>(new Map())
+
+  // Drag & drop — só disponível sem filtros ativos e com permissão de edição
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const canDrag = permission === 'edit' && !search && !ambFilter && filter === 'todos'
+
+  const filtered = useFilteredItems(search, ambFilter)
   const { toasts, show: showToast } = useToast()
   const pending = totalItems - boughtItems
+
+  // ── DnD handlers ──────────────────────────────────────────────────────────
+  function handleDragStart(e: React.DragEvent, id: string) {
+    e.dataTransfer.effectAllowed = 'move'
+    setDraggedId(id)
+  }
+
+  function handleDragOver(e: React.DragEvent, id: string) {
+    if (!canDrag) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (id !== dragOverId) setDragOverId(id)
+  }
+
+  function handleDrop(e: React.DragEvent, targetId: string) {
+    e.preventDefault()
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null); setDragOverId(null); return
+    }
+    const ids = allItems.map((i) => i.id)
+    const from = ids.indexOf(draggedId)
+    const to   = ids.indexOf(targetId)
+    const next = [...ids]
+    next.splice(from, 1)
+    next.splice(to, 0, draggedId)
+    void reorderItems(next)
+    setDraggedId(null); setDragOverId(null)
+  }
+
+  function handleDragEnd() {
+    setDraggedId(null); setDragOverId(null)
+  }
 
   async function handleRemoveConfirm() {
     if (!removeTarget) return
@@ -229,7 +273,19 @@ export function ListaPage() {
       </div>
 
       <MetricsBar />
-      <FilterBar search={search} onSearchChange={setSearch} />
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        ambFilter={ambFilter}
+        onAmbChange={setAmbFilter}
+      />
+
+      {/* Dica de reordenação */}
+      {canDrag && filtered.length > 1 && (
+        <p className="text-[11px] text-ink-3 text-center mb-2 select-none">
+          ↕ Arraste os itens para reordenar
+        </p>
+      )}
 
       <div className="space-y-2">
         {filtered.length === 0 ? (
@@ -240,14 +296,27 @@ export function ListaPage() {
           </div>
         ) : (
           filtered.map((item) => (
-            <ItemRow
+            <div
               key={item.id}
-              item={item}
-              onDetail={setDetailItem}
-              onEdit={setEditItem}
-              onBuy={setBuyItem}
-              onRemove={setRemoveTarget}
-            />
+              draggable={canDrag}
+              onDragStart={canDrag ? (e) => handleDragStart(e, item.id) : undefined}
+              onDragOver={canDrag ? (e) => handleDragOver(e, item.id) : undefined}
+              onDrop={canDrag ? (e) => handleDrop(e, item.id) : undefined}
+              onDragEnd={canDrag ? handleDragEnd : undefined}
+              className={[
+                'transition-all duration-150',
+                draggedId === item.id  ? 'opacity-40 scale-[0.98]'   : '',
+                dragOverId === item.id && draggedId !== item.id ? 'translate-y-0.5 ring-2 ring-wm-blue/30 rounded-2xl' : '',
+              ].join(' ')}
+            >
+              <ItemRow
+                item={item}
+                onDetail={setDetailItem}
+                onEdit={setEditItem}
+                onBuy={setBuyItem}
+                onRemove={setRemoveTarget}
+              />
+            </div>
           ))
         )}
       </div>
@@ -291,6 +360,7 @@ export function ListaPage() {
           onEdit={() => setEditItem(detailItem)}
           onBuy={() => setBuyItem(detailItem)}
           onRemove={() => setRemoveTarget(detailItem)}
+          recoCache={recoCache}
         />
       )}
 

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useListStore } from '../store/useListStore'
 import type { Item, FilterType } from '../types'
 
-export function useFilteredItems(search: string): Item[] {
+export function useFilteredItems(search: string, ambFilter: string | null = null): Item[] {
   const items  = useListStore((s) => s.items)
   const filter = useListStore((s) => s.filter)
 
@@ -16,9 +16,11 @@ export function useFilteredItems(search: string): Item[] {
         (i.obs ?? '').toLowerCase().includes(q)
 
       const matchFilter = applyFilter(i, filter)
-      return matchSearch && matchFilter
+      const matchAmb    = !ambFilter || i.amb === ambFilter
+
+      return matchSearch && matchFilter && matchAmb
     })
-  }, [items, filter, search])
+  }, [items, filter, search, ambFilter])
 }
 
 function applyFilter(item: Item, filter: FilterType): boolean {
