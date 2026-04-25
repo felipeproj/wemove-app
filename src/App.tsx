@@ -73,7 +73,7 @@ export default function App() {
   // ── App ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-bg">
-      <NavBar />
+      <NavBar onOpenAdmin={role === 'admin' ? () => setShowAdmin(true) : undefined} />
 
       {/* pb-20 reserva espaço para o BottomNav no mobile */}
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 pb-24 md:pb-8">

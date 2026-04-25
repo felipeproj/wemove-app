@@ -11,8 +11,13 @@ const TABS: { id: TabType; label: string }[] = [
   { id: 'dash',   label: 'Dashboard' },
 ]
 
-function UserButton() {
+interface UserButtonProps {
+  onOpenAdmin?: () => void
+}
+
+function UserButton({ onOpenAdmin }: UserButtonProps) {
   const user         = useAuthStore((s) => s.user)
+  const role         = useAuthStore((s) => s.role)
   const signOut      = useAuthStore((s) => s.signOut)
   const goToAuth     = useListStore((s) => s.goToAuth)
   const goToUserArea = useListStore((s) => s.goToUserArea)
@@ -21,12 +26,9 @@ function UserButton() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  // Fecha o dropdown ao clicar fora
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -60,10 +62,24 @@ function UserButton() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 w-48 bg-white border border-border rounded-2xl shadow-card py-1 z-50">
+        <div className="absolute right-0 top-10 w-52 bg-white border border-border rounded-2xl shadow-card py-1 z-50">
           <div className="px-3 py-2 border-b border-border">
             <p className="text-xs font-semibold text-ink truncate">{user.email}</p>
+            {role === 'admin' && (
+              <span className="inline-block mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700">Admin</span>
+            )}
           </div>
+
+          {role === 'admin' && onOpenAdmin && (
+            <button
+              onClick={() => { setOpen(false); onOpenAdmin() }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 transition-colors"
+            >
+              <span>🔐</span>
+              Painel Admin
+            </button>
+          )}
+
           <button
             onClick={() => { setOpen(false); goToUserArea() }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-ink hover:bg-bg transition-colors"
@@ -84,22 +100,28 @@ function UserButton() {
             </svg>
             Me ajude a comprar
           </button>
-          <button
-            onClick={async () => { setOpen(false); await signOut() }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Sair da conta
-          </button>
+          <div className="border-t border-border mt-1 pt-1">
+            <button
+              onClick={async () => { setOpen(false); await signOut() }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Sair da conta
+            </button>
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-export function NavBar() {
+interface NavBarProps {
+  onOpenAdmin?: () => void
+}
+
+export function NavBar({ onOpenAdmin }: NavBarProps) {
   const tab          = useListStore((s) => s.tab)
   const setTab       = useListStore((s) => s.setTab)
   const permission   = useListStore((s) => s.permission)
@@ -184,7 +206,7 @@ export function NavBar() {
               {loading ? (loadingMsg || 'Carregando...') : permission === 'edit' ? '● ao vivo' : '👁 visualização'}
             </span>
 
-            <UserButton />
+            <UserButton onOpenAdmin={onOpenAdmin} />
           </div>
         </div>
       </header>

@@ -318,11 +318,11 @@ export function LandingPage({ onOpenAdmin }: LandingPageProps = {}) {
       {hasHeader && (
         <LandingHeader
           onHome={() => {
-            // Se logado, "home" é a área do usuário
             if (user) setView('user-area')
             else setView('home')
           }}
           onUserArea={user && view !== 'user-area' ? () => setView('user-area') : undefined}
+          onOpenAdmin={onOpenAdmin}
         />
       )}
 

@@ -821,16 +821,6 @@ export function UserAreaPage({ onCreateNew, onGoToCompra, onOpenQuery, onOpenAdm
                 <span className="hidden sm:inline">Vincular</span>
               </button>
             )}
-            {role === 'admin' && onOpenAdmin && (
-              <button
-                onClick={onOpenAdmin}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-all"
-                title="Painel de administração"
-              >
-                🔐
-                <span className="hidden sm:inline">Admin</span>
-              </button>
-            )}
             <button
               onClick={onCreateNew}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold gradient-bg text-white shadow-btn hover:opacity-90 transition-all"
