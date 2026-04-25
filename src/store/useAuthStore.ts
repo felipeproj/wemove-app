@@ -45,30 +45,53 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   /** Inicializa listener de sessão — deve ser chamado uma vez no App */
   init: () => {
-    // Verifica sessão existente
-    supabase.auth.getSession().then(async (result) => {
-      const session = result.data?.session
-      const user = session?.user ?? null
-      if (user) {
-        const { role, plan } = await loadRole(user.id)
-        set({ user, role, plan, authLoading: false })
-      } else {
-        set({ user: null, role: 'user', plan: 'free', authLoading: false })
+    // Failsafe: se algo travar (rede, SW, etc), libera authLoading depois de 5s
+    // para o app conseguir renderizar a LandingPage mesmo sem session resolvida.
+    const failsafe = setTimeout(() => {
+      if (get().authLoading) {
+        console.warn('[auth] getSession() timeout — liberando authLoading')
+        set({ authLoading: false })
       }
-    })
+    }, 5000)
+
+    // Verifica sessão existente
+    supabase.auth.getSession()
+      .then(async (result) => {
+        const session = result.data?.session
+        const user = session?.user ?? null
+        if (user) {
+          const { role, plan } = await loadRole(user.id)
+          set({ user, role, plan, authLoading: false })
+        } else {
+          set({ user: null, role: 'user', plan: 'free', authLoading: false })
+        }
+      })
+      .catch((err) => {
+        console.error('[auth] Erro em getSession():', err)
+        set({ user: null, role: 'user', plan: 'free', authLoading: false })
+      })
+      .finally(() => clearTimeout(failsafe))
 
     // Escuta mudanças de auth (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
-      const user = session?.user ?? null
-      if (user) {
-        const { role, plan } = await loadRole(user.id)
-        set({ user, role, plan, authLoading: false })
-      } else {
-        set({ user: null, role: 'user', plan: 'free', authLoading: false })
+      try {
+        const user = session?.user ?? null
+        if (user) {
+          const { role, plan } = await loadRole(user.id)
+          set({ user, role, plan, authLoading: false })
+        } else {
+          set({ user: null, role: 'user', plan: 'free', authLoading: false })
+        }
+      } catch (err) {
+        console.error('[auth] Erro em onAuthStateChange:', err)
+        set({ authLoading: false })
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(failsafe)
+      subscription.unsubscribe()
+    }
   },
 
   /** Recarrega role/plan manualmente (ex: após promoção) */
