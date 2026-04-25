@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useListStore } from '../store/useListStore'
-import type { FilterType } from '../types'
+import type { FilterType, Room } from '../types'
 
 const FILTERS: { id: FilterType; label: string }[] = [
   { id: 'todos',          label: 'Todos' },
@@ -35,9 +35,9 @@ export function FilterBar({ search, onSearchChange, ambFilter, onAmbChange }: Pr
   const items     = useListStore((s) => s.items)
 
   // Ambientes presentes na lista atual, na ordem do enum Room
-  const AMB_ORDER = ['Sala','Cozinha','Quarto Casal','Escritório','Área de Serviço','Banheiro / Lavabo','Geral / Tecnologia']
+  const AMB_ORDER: Room[] = ['Sala','Cozinha','Quarto Casal','Escritório','Área de Serviço','Banheiro / Lavabo','Geral / Tecnologia']
   const ambs = useMemo(() => {
-    const present = new Set(items.map((i) => i.amb))
+    const present = new Set<Room>(items.map((i) => i.amb))
     return AMB_ORDER.filter((a) => present.has(a))
   }, [items]) // eslint-disable-line react-hooks/exhaustive-deps
 
