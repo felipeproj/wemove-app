@@ -216,6 +216,11 @@ export interface AdminUsersResult {
   limit: number
 }
 
+export const paymentApi = {
+  createCheckout: (plan: 'essencial' | 'familia') =>
+    request<{ url: string }>('POST', '/payments/checkout', { plan }),
+}
+
 export const adminApi = {
   getMetrics: () =>
     request<AdminMetrics>('GET', '/admin/metrics'),

@@ -1,22 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useListStore } from '../../store/useListStore'
+import { useAuthStore } from '../../store/useAuthStore'
+import { paymentApi } from '../../services/api'
 
 interface Props {
   onClose: () => void
 }
 
-interface Plan {
-  name: string
-  price: string
-  period: string
-  desc: string
-  features: string[]
-  cta: string
-  featured: boolean
-}
+type PlanKey = 'essencial' | 'familia'
 
-const PLANS: Plan[] = [
+const PLANS: { key: PlanKey; name: string; price: string; period: string; desc: string; features: string[]; featured: boolean }[] = [
   {
+    key: 'essencial',
     name: 'Essencial',
     price: 'R$ 19,90',
     period: 'pagamento único · 6 meses',
@@ -28,10 +23,10 @@ const PLANS: Plan[] = [
       'Recomendações de produtos com links',
       'Histórico de gastos e orçamento',
     ],
-    cta: 'Quero o Essencial',
     featured: true,
   },
   {
+    key: 'familia',
     name: 'Família',
     price: 'R$ 29,90',
     period: 'pagamento único · 12 meses',
@@ -43,18 +38,36 @@ const PLANS: Plan[] = [
       'Comentários por item',
       'Validade de 12 meses',
     ],
-    cta: 'Quero o Família',
     featured: false,
   },
 ]
 
 export function UpgradeModal({ onClose }: Props) {
   const setModalOpen = useListStore((s) => s.setModalOpen)
+  const user         = useAuthStore((s) => s.user)
+  const [loading, setLoading] = useState<PlanKey | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
 
   useEffect(() => {
     setModalOpen(true)
     return () => setModalOpen(false)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleUpgrade(plan: PlanKey) {
+    if (!user) {
+      setError('Faça login para continuar com o pagamento.')
+      return
+    }
+    setLoading(plan)
+    setError(null)
+    try {
+      const { url } = await paymentApi.createCheckout(plan)
+      window.location.href = url
+    } catch {
+      setError('Não foi possível iniciar o pagamento. Tente novamente.')
+      setLoading(null)
+    }
+  }
 
   return (
     <div
@@ -93,11 +106,9 @@ export function UpgradeModal({ onClose }: Props) {
         <div className="p-5 flex flex-col sm:flex-row gap-4">
           {PLANS.map((plan) => (
             <div
-              key={plan.name}
+              key={plan.key}
               className={`flex-1 rounded-xl border p-4 flex flex-col gap-3 ${
-                plan.featured
-                  ? 'border-wm-blue ring-1 ring-wm-blue'
-                  : 'border-border'
+                plan.featured ? 'border-wm-blue ring-1 ring-wm-blue' : 'border-border'
               }`}
             >
               {plan.featured && (
@@ -119,28 +130,31 @@ export function UpgradeModal({ onClose }: Props) {
                   </li>
                 ))}
               </ul>
-              <a
-                href="https://wemoveapp.co/#pricing"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`mt-1 block w-full py-2.5 rounded-xl text-sm font-bold text-center transition-all ${
+              <button
+                onClick={() => handleUpgrade(plan.key)}
+                disabled={loading !== null}
+                className={`mt-1 w-full py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-60 ${
                   plan.featured
                     ? 'grad text-white shadow-btn hover:opacity-90'
                     : 'border border-border text-ink-2 hover:border-wm-blue hover:text-wm-blue'
                 }`}
               >
-                {plan.cta}
-              </a>
+                {loading === plan.key ? 'Redirecionando...' : plan.name === 'Essencial' ? 'Quero o Essencial' : 'Quero o Família'}
+              </button>
             </div>
           ))}
         </div>
 
+        {/* Error */}
+        {error && (
+          <div className="px-5 pb-3">
+            <p className="text-xs text-red-500 text-center bg-red-50 rounded-lg py-2 px-3">{error}</p>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="px-5 pb-5 pt-0 text-center">
-          <button
-            onClick={onClose}
-            className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
-          >
+        <div className="px-5 pb-5 pt-1 text-center">
+          <button onClick={onClose} className="text-xs text-ink-3 hover:text-ink-2 transition-colors">
             Continuar no plano grátis
           </button>
         </div>
