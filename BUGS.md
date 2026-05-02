@@ -98,3 +98,23 @@ Refatoração anterior moveu o acesso admin para o dropdown do header, mas deixo
 
 ### Correção
 Removidas as props e variáveis não utilizadas de `UserAreaPage.tsx` e o pass-through correspondente em `LandingPage.tsx`.
+
+---
+
+## BUG-APP-006 🟠 Botão "Confirmar compra" trava em "Salvando..." sem fazer request
+**Data:** 2026-04-25  
+**Commit de correção:** `613a7b2`
+
+### Ocorrência
+Ao clicar em "Confirmar compra" no modal de registrar compra, o botão mudava para "Salvando..." mas nenhuma requisição aparecia no DevTools Network. A compra nunca era salva.
+
+### Análise
+`getAccessToken()` em `src/lib/supabase.ts` chamava `supabase.auth.getSession()` a cada request de API. Essa chamada pode entrar em deadlock pela mesma race condition identificada no BUG-APP-001 (token refresh pendente ou conflito com Service Worker via `clientsClaim`). Quando `getSession()` trava:
+
+1. `getAccessToken()` aguarda indefinidamente
+2. `request()` em `api.ts` nunca chega ao `fetch()`
+3. Nenhuma requisição de rede é disparada
+4. O botão fica travado em "Salvando..." para sempre
+
+### Correção
+`getAccessToken()` passou a usar um token cacheado em memória, atualizado automaticamente pelo listener `onAuthStateChange`. O cache elimina a necessidade de chamar `getSession()` em chamadas subsequentes. A primeira chamada (antes do listener disparar) ainda usa `getSession()`, mas com timeout de 3 segundos e fallback para `null` (aceitável, pois a edição de itens usa o token da lista, não JWT).
